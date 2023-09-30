@@ -160,7 +160,7 @@ namespace WIP_Polygon {
 			glm::vec3 u = rotation * glm::vec3(0.0f, 1.0f, 0.0f) * scale.y * 0.5f;
 
 			Debug::DrawDebugLine(center + f, center + f  + f * 0.5f, Colors::Cyan, 1.0f);
-			Debug::DrawDebugLine(center + r, center + r + r * 0.5f, Colors::Red, 1.0f);
+			Debug::DrawDebugLine(center + r, center + r + r * 0.5f, Colors::Strawberry, 1.0f);
 			Debug::DrawDebugLine(center + u, center + u + u * 0.5f, Colors::Green, 1.0f);
 
 		}

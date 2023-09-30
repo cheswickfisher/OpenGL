@@ -9,26 +9,23 @@
 #include "Shader.h"
 #include "HalfEdge.h"
 #include "CollisionShape.h"
+#include "Collider.h"
 //#include "Colors.h"
 #include <vector>
 #include <unordered_map>
 //WIP_Polygon::Collider;
 namespace WIP_Polygon {
+    class Collider;
     struct DebugMesh {
-        unsigned int VAO{};
-        unsigned int VBO{};
-        std::vector<float> verts{};
-        WIP_Polygon::CollisionShape* mesh{};
-        glm::mat4 model{ 1.0f };
+        int id;
+        unsigned int VAO;
+        unsigned int VBO;
+        std::vector<float> verts;
+        Collider* collider;
+        DebugMesh();
     };
-
-    unsigned int lineVAO;
-    unsigned int lineVBO;
-    unsigned int cubeVAO;
-    unsigned int cubeVBO;
-    Shader debugShader;
-    float debug_line_verts[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-    float debug_cube_verts[] = {
+    //float debug_line_verts[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+   /* float debug_cube_verts[] = {
         -0.5f, -0.5f, -0.5f,
          0.5f, -0.5f, -0.5f,
          0.5f,  0.5f, -0.5f,
@@ -70,12 +67,12 @@ namespace WIP_Polygon {
          0.5f,  0.5f,  0.5f,
         -0.5f,  0.5f,  0.5f,
         -0.5f,  0.5f, -0.5f,
-    };
-    //std::vector<DebugMesh> debug_meshes{};
-    std::unordered_map<int, DebugMesh> debug_meshes{};
+    };*/
+    //std::unordered_map<int, DebugMesh> debug_meshes;
 
     class Debug {
     public:
+        std::unordered_map<int, DebugMesh> debug_meshes;
         Debug();
         /*Debug() {
 
@@ -103,7 +100,7 @@ namespace WIP_Polygon {
             glBindVertexArray(0);
         }
         */
-        void AddMesh(WIP_Polygon::CollisionShape* _mesh);
+        void AddMesh(WIP_Polygon::Collider* _collider);
         /*void AddMesh(WIP_Polygon::CollisionShape* _mesh) {
             DebugMesh debug_mesh{};
             unsigned int VAO{};
@@ -134,7 +131,7 @@ namespace WIP_Polygon {
 
             debug_meshes[_mesh->id] = debug_mesh;
         }*/
-        void UpdateTransforms(glm::mat4 view, glm::mat4 projection, std::vector<int> _debug_colliders);
+        void UpdateTransforms(glm::mat4 view, glm::mat4 projection);
         /*void UpdateTransforms(glm::mat4 view, glm::mat4 projection, std::vector<int> _debug_colliders) {
            debugShader.use();
             debugShader.setMat4("view", view);
@@ -149,6 +146,20 @@ namespace WIP_Polygon {
                 debug_meshes[_debug_colliders[i]->collider->id].model = glm::translate(model, _debug_colliders[i]->center)
                     * glm::toMat4(_debug_colliders[i]->rotation)
                     * glm::scale(model, _debug_colliders[i]->scale);
+            }
+        }*/
+        void DrawDebugMeshes();
+        /*static void DrawDebugMeshes() {
+            std::unordered_map<int, DebugMesh>::iterator it;
+            for (it = debug_meshes.begin(); it != debug_meshes.end(); it++) {
+                debugShader.use();
+                debugShader.setMat4("model", it->second.model);
+                debugShader.setVec4("color", Colors::Green);
+                glLineWidth(1.0f);
+                glBindVertexArray(it->second.VAO);
+                glDrawArrays(GL_LINE_STRIP, 0, it->second.mesh->edges.size());
+                glBindVertexArray(0);
+                glLineWidth(1.0f);
             }
         }*/
         static void DrawDebugLine(glm::vec3 start, glm::vec3 end, glm::vec4 color, float line_width);
@@ -180,20 +191,6 @@ namespace WIP_Polygon {
             glDrawArrays(GL_LINE_STRIP, 0, 24);
             glBindVertexArray(0);
             glLineWidth(1.0f);
-        }*/
-        static void DrawDebugMeshes();
-        /*static void DrawDebugMeshes() {
-            std::unordered_map<int, DebugMesh>::iterator it;
-            for (it = debug_meshes.begin(); it != debug_meshes.end(); it++) {
-                debugShader.use();
-                debugShader.setMat4("model", it->second.model);
-                debugShader.setVec4("color", Colors::Green);
-                glLineWidth(1.0f);
-                glBindVertexArray(it->second.VAO);
-                glDrawArrays(GL_LINE_STRIP, 0, it->second.mesh->edges.size());
-                glBindVertexArray(0);
-                glLineWidth(1.0f);
-            }
         }*/
 
     };

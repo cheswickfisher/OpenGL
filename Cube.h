@@ -237,15 +237,15 @@ namespace WIP_Polygon {
 			//planes
 			planes[0].edge = &edges[0];
 			planes[0].normal = glm::vec3(0.0f, 1.0f, 0.0f);
-			planes[1].edge = &edges[4];
+			planes[1].edge = &edges[5];
 			planes[1].normal = glm::vec3(0.0f, -1.0f, 0.0f);
-			planes[2].edge = &edges[8];
+			planes[2].edge = &edges[10];
 			planes[2].normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			planes[3].edge = &edges[12];
+			planes[3].edge = &edges[15];
 			planes[3].normal = glm::vec3(0.0f, 0.0f, -1.0f);
-			planes[4].edge = &edges[16];
+			planes[4].edge = &edges[18];
 			planes[4].normal = glm::vec3(-1.0f, 0.0f, 0.0f);
-			planes[5].edge = &edges[20];
+			planes[5].edge = &edges[23];
 			planes[5].normal = glm::vec3(1.0f, 0.0f, 0.0f);
 
 			//vertices

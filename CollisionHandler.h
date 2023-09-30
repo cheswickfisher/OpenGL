@@ -19,7 +19,7 @@
 #include <glm\glm\gtx\quaternion.hpp>
 #include <iostream>
 
-#define PLANE_THICKNESS_EPSILON 0.001f
+#define PLANE_THICKNESS_EPSILON 0.0001f
 #define POINT_IN_FRONT_OF_PLANE 0
 #define POINT_BEHIND_PLANE 1
 #define POINT_ON_PLANE 2
@@ -215,6 +215,7 @@ public:
 		//edge_a_head = edge_a.origin->position;
 		//edge_a_head = glm::inverse(b->m_localToWorld) * a->m_localToWorld * glm::vec4(edge_a.origin->position, 1.0f);
 		glm::vec3 edge_b_dir = b->rotation * edge_b.Direction();
+		//std::cout << "b rotation: " << b->rotation.x << "," << b->rotation.y << "," << b->rotation.z << "," << b->rotation.w << "\n";
 		//edge_b_dir = glm::inverse(a->rotation) * b->rotation * edge_b.Direction();
 		//edge_b_dir = edge_b.Direction();
 		glm::vec3 edge_b_head = b->m_localToWorld * glm::vec4(edge_b.origin->position, 1.0f);
@@ -224,11 +225,14 @@ public:
 			return std::numeric_limits<float>::lowest();
 		} 
 		normal = glm::normalize(glm::cross(edge_a_dir, edge_b_dir));
-		if (glm::dot(normal, edge_a_head - a->center) < 0.0f) {
+		if (glm::dot(normal, edge_a_head - a->center) < 0.0f)
+		//if (glm::dot(normal, glm::vec3(a->m_localToWorld * glm::vec4(a->center,1.0f) - b->m_localToWorld * glm::vec4(b->center,1.0f))) < 0.0f)
+		{
 			normal = -normal;
 		}
 		//return glm::dot(normal, glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_b_head,0.0f)) - glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_a_head,0.0f)));
 		return glm::dot(normal, edge_b_head - edge_a_head);
+
 	}
 
 	float ClosestPtSegmentSegment(glm::vec3 p1, glm::vec3 q1, glm::vec3 p2, glm::vec3 q2, float& s, float& t, glm::vec3& c1, glm::vec3& c2) {
@@ -291,6 +295,7 @@ public:
 	}
 
 	bool BuildMinkowskiFace(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::HalfEdge edge_a, WIP_Polygon::HalfEdge edge_b) {
+		if (edge_a.incident_face == nullptr || edge_b.incident_face == nullptr) { return false; }
 		glm::vec3 norm_a = a->rotation * edge_a.incident_face->normal;
 		glm::vec3 norm_b{};
 		if (edge_a.twin->incident_face != nullptr) {
@@ -303,6 +308,7 @@ public:
 		glm::vec3 norm_d{};
 		if (edge_b.twin->incident_face != nullptr) {
 			norm_d = b->rotation * edge_b.twin->incident_face->normal;
+			//std::cout << "this should never be the case when b is a quad" << "\n";
 		}
 		else {
 			norm_d = -norm_c;
@@ -383,7 +389,8 @@ public:
 						q.max_edge_a = i_a;
 						q.max_edge_b = i_b;
 					}
-					if (separation < 0.0f && separation > q.min_distance) {
+					if (separation < 0.0f && separation > q.min_distance) 
+					{
 						q.min_distance = separation;
 						q.min_edge_a = i_a;
 						q.min_edge_b = i_b;
@@ -404,8 +411,9 @@ public:
 		if (q_b.max_distance > 0.0f) {
 			return false;
 		}
-
 		EdgeQuery e = QueryEdgeDirections(a, b);
+#define TEST_EDGE
+#ifdef TEST_EDGE
 //#define DEBUG_1
 #ifdef DEBUG_1
 		std::cout << "e.max_distance -> " << e.max_distance << "\n";
@@ -419,6 +427,7 @@ public:
 			, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f), Colors::Orange, 1.0);
 #endif
 		if (e.max_distance > 0.0f) {
+			std::cout << "edge exit" << "\n";
 			return false;
 		}
 //#define DEBUG
@@ -435,6 +444,7 @@ public:
 		else {
 			CreateEdgeContact(a, b, e, manifold);
 		}
+#endif
 		return true;
 	}
 
@@ -467,7 +477,6 @@ public:
 		manifold.contact_penetration = e.min_distance;
 		//manifold.contact_normal = glm::normalize(c2 - c1);
 		manifold.contact_normal = -e.edge_normal;
-
 		manifold.contact_type = "edge";
 
 #ifdef DEBUG
@@ -798,6 +807,7 @@ public:
 				if (dist < min_penetration) {
 					min_penetration = dist;
 					contact_manifold.contact_penetration = dist;
+
 				}
 			}
 		}

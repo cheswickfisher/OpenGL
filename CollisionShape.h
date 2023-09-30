@@ -10,15 +10,12 @@
 
 namespace WIP_Polygon {
 	struct CollisionShape {
-		int id{};
-		std::vector<Vertex> vertices{};
-		std::vector<Plane> planes{};
-		std::vector<HalfEdge> edges{};
-		CollisionShape(){
-			id = GenerateID();
-		}
+		unsigned int id;
+		std::vector<Vertex> vertices;
+		std::vector<Plane> planes;
+		std::vector<HalfEdge> edges;
+		CollisionShape();
 		virtual ~CollisionShape() = 0;
 	};
-	CollisionShape::~CollisionShape() {}
 }
 #endif

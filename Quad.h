@@ -31,7 +31,7 @@ namespace WIP_Polygon {
 			};
 			
 			planes = {
-				Plane{}
+				Plane{}, Plane{}
 			};
 		
 
@@ -43,6 +43,9 @@ namespace WIP_Polygon {
 			//planes
 			planes[0].edge = &edges[0];
 			planes[0].normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			planes[1].edge = &edges[4];
+			planes[1].normal = glm::vec3(0.0f, 0.0f, -1.0f);
+
 			//vertices
 			vertices[0].edge = &edges[0];
 			vertices[1].edge = &edges[1];
@@ -75,25 +78,25 @@ namespace WIP_Polygon {
 			edges[3].next = &edges[0];
 			edges[4].index = 4;
 			edges[4].origin = &vertices[1];
-			edges[4].incident_face = nullptr;
+			edges[4].incident_face = &planes[1];
 			edges[4].twin = &edges[0];
 			edges[4].previous = &edges[7];
 			edges[4].next = &edges[5];
 			edges[5].index = 5;
 			edges[5].origin = &vertices[0];
-			edges[5].incident_face = nullptr;
+			edges[5].incident_face = &planes[1];
 			edges[5].twin = &edges[3];
 			edges[5].previous = &edges[4];
 			edges[5].next = &edges[6];
 			edges[6].index = 6;
 			edges[6].origin = &vertices[3];
-			edges[6].incident_face = nullptr;
+			edges[6].incident_face = &planes[1];
 			edges[6].twin = &edges[2];
 			edges[6].previous = &edges[5];
 			edges[6].next = &edges[7];
 			edges[7].index = 7;
 			edges[7].origin = &vertices[2];
-			edges[7].incident_face = nullptr;
+			edges[7].incident_face = &planes[1];
 			edges[7].twin = &edges[1];
 			edges[7].previous = &edges[6];
 			edges[7].next = &edges[4];

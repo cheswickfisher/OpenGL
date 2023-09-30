@@ -12,8 +12,28 @@
 #include <string>
 
 namespace WIP_Polygon {
-
 	class Collider {
+	public:
+		glm::vec3 center;
+		std::array<glm::vec3, 3> u;
+		glm::vec3 e;
+		glm::quat rotation;
+		glm::vec3 scale;
+		glm::mat4 m_localToWorld;
+		AABB aabb;
+		WIP_Polygon::CollisionShape* collider;
+		std::string name;
+		glm::vec4 color;
+		bool enable_render;
+		Collider();
+		Collider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation);
+		void UpdateTransform(glm::vec3 _position, glm::quat _rotation, glm::vec3 _scale);
+		glm::vec3 GetSupport(glm::vec3 direction);
+		virtual ~Collider() = 0;
+		virtual void DrawAxes() = 0;
+
+	};
+	/*class Collider {
 	public:
 		glm::vec3 center{};
 		std::array<glm::vec3, 3> u{};
@@ -64,7 +84,7 @@ namespace WIP_Polygon {
 		virtual ~Collider() = 0;
 		virtual void DrawAxes() = 0;
 	};
-	Collider::~Collider() {}
+	Collider::~Collider() {}*/
 }
 
 #endif

@@ -48,16 +48,17 @@ float pitch = 0.0f;
 float yaw = 0.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
 WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(0.0f,0.0f,0.0f) };
-WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f) }; 
-WIP_Polygon::QuadCollider ground_collider{ glm::vec3(1.0f), glm::vec3(0.0f) };
-CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(0.0f, 0.0f, 1.5f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
-Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
-Rigidbody plane{ glm::vec3(1.0f), glm::vec3(0.0f), &ground_collider};
+WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f)};
+WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.8f), glm::vec3(1.8f,-0.6f, 0.9f), glm::vec3(0.0f, 0.0f, 0.0f) };
+WIP_Polygon::QuadCollider ground_collider{ glm::vec3(10.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f)};
+CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(0.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
+Rigidbody obstacle{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
+Rigidbody obstacle_2{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_2_collider };
+Rigidbody plane{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),&ground_collider};
 GameObject debugCollider{ glm::vec3(0.1f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f) };
-std::vector<WIP_Polygon::Collider*>debug_colliders{
-    &player_collider, &obstacle_collider, &ground_collider
+std::vector<WIP_Polygon::Collider*>colliders{
+    &player_collider, &obstacle_collider, &obstacle_2_collider, &ground_collider
 };
 CollisionHandler collisionHandler;
 glm::vec3 dirLightDirection(-0.2f, -1.0f, -0.3f);
@@ -120,12 +121,6 @@ float planeVertices[] = {
      5.0f, -0.5f, -5.0f,  2.0f, 2.0f
 };
 int main() {
-    std::cout << "playerObject_collider id: " << player_collider.cube.id << "\n";
-    std::cout << "obstacle_collider id: " << obstacle_collider.cube.id << "\n";
-    std::cout << "ground_collider id: " << ground_collider.quad.id << "\n";
-    std::cout << "obstacle collider id: " << obstacle.collider->collider->id << "\n";
-    std::cout << "player collider id: " << playerObject.collider->collider->id << "\n";
-
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -196,6 +191,9 @@ int main() {
 
     WIP_Polygon::Debug debug = WIP_Polygon::Debug();
     debug.Setup(debugShader);
+    for (int i = 0; i < colliders.size(); i++) {
+        debug.AddMesh(colliders[i]);
+    }
 
     unsigned int cubeTexture = loadTexture("C:/OPENGL/textures/sandstone_brick_wall_diffuse.png");
     unsigned int planeTexture = loadTexture("C:/OPENGL/textures/pavement_diffuse.png");
@@ -214,39 +212,49 @@ int main() {
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.ViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(fov), a, 0.1f, 100.0f);
-        debug.UpdateTransforms(view, projection, std::vector<int>{1});
 
         processInput(window);
         updateTransforms();
-        glm::vec3 offset = glm::vec3(0.0f);
 
-        //checkCollision(playerObject.collider, obstacle.collider, offset);
+        glm::vec3 initial_player_pos = playerObject.position;
+        glm::vec3 offset = glm::vec3(0.0f);
+        glm::vec3 combined_offset{}; //using this for debugging
         WIP_Polygon::ContactManifold manifold{};
-        bool overlap = checkOverlap(playerObject.collider, obstacle.collider, manifold);
-        /*std::cout << "manifold info: " << "type -> " << manifold.contact_type << " penetration -> " << manifold.contact_penetration << " normal ->" <<
-            manifold.contact_normal.x << "," << manifold.contact_normal.y << "," << manifold.contact_normal.z << "\n";*/
-        glm::vec4 col{};
+        bool overlap{};
+        float total_pen{std::numeric_limits<float>::max()};
+        int iterations = 0;
+        while (total_pen > 0.0f + 0.001f) {
+            total_pen = 0.0f;
+            for (int i = 0; i < colliders.size(); i++) {
+                if (playerObject.collider->collider->id == colliders[i]->collider->id) { continue; }
+                overlap = checkOverlap(playerObject.collider, colliders[i], manifold) || overlap;
+                offset = manifold.contact_normal * glm::abs(manifold.contact_penetration);
+                playerObject.position = playerObject.position + offset;
+                combined_offset += offset;
+                total_pen += glm::abs(manifold.contact_penetration);
+                manifold = WIP_Polygon::ContactManifold();
+                updateTransforms();
+            }
+            iterations += 1;
+        }
+        std::cout << "solver iterations: " << iterations << "\n";
         if (overlap) {
-            col = Colors::Cyan;
+            playerObject.collider->color = Colors::Red;
         }
         if (!overlap) {
-            col = Colors::Green;
+            playerObject.collider->color = Colors::Green;
         }
-        offset = manifold.contact_normal * glm::abs(manifold.contact_penetration);
-       // updateTransforms();
-        //TODO: account for scale of collider in offset calculation. right now if scale is 2.0, then offset must be multipled by 2.0. if
-        //  scale is 3.0, offset must be multipled by 3.0f. etc.
-        debugCollider.position = playerObject.position + offset;//manifold.contact_normal * glm::abs(manifold.contact_penetration);
-        playerObject.position = playerObject.position + offset;
-        //std::cout << "player pos: " << playerObject.position.x << ", " << playerObject.position.y << ", " << playerObject.position.z << "\n";
+
+        glm::vec4 col{};
         updateTransforms();
         updateCameraTransform();
+        debug.UpdateTransforms(view, projection);
 
-        WIP_Polygon::Debug::DrawDebugCube(playerObject.collider->center, playerObject.rotation, /*glm::vec3(playerObject.collider.e[0], playerObject.collider.e[1], playerObject.collider.e[2]) * 2.0f*/ playerObject.collider->scale, col, 3.0f);
-        WIP_Polygon::Debug::DrawDebugCube(obstacle.collider->center, obstacle.rotation, /*glm::vec3(obstacle.collider.e[0], obstacle.collider.e[1], obstacle.collider.e[2]) * 2.0f*/ obstacle.collider->scale, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 3.0f);
-        
-        //Debug::DrawDebugCube(debugCollider.position, debugCollider.rotation, debugCollider.scale, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.0f);
         playerObject.collider->DrawAxes();
+
+        //debugCollider.position = initial_player_pos + combined_offset;
+        
+        debug.DrawDebugMeshes();
 
         lightingShader.use();
         lightingShader.setMat4("view", view);
@@ -257,13 +265,13 @@ int main() {
         model = glm::mat4(1.0f);
         model = glm::translate(model, obstacle.position);
         lightingShader.setMat4("model", model);
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
+       //glDrawArrays(GL_TRIANGLES, 0, 36);
         
         glBindTexture(GL_TEXTURE_2D, playerTexture);
         model = glm::mat4(1.0f);
         model =  glm::translate(model, playerObject.position) * glm::toMat4(playerObject.rotation) * glm::scale(model, playerObject.scale);
         lightingShader.setMat4("model", model);
-       // glDrawArrays(GL_TRIANGLES, 0, 36);
+        //glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glBindVertexArray(planeVAO);
         glBindTexture(GL_TEXTURE_2D, planeTexture);
