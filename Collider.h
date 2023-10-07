@@ -4,6 +4,7 @@
 #include "AABB.h"
 #include "CollisionShape.h"
 #include "Debug.h"
+#include "Manifold.h"
 #include <glm/glm/glm.hpp>
 #include <glm\glm\gtc\matrix_transform.hpp>
 #include <glm/glm/gtc/quaternion.hpp>
@@ -22,9 +23,11 @@ namespace WIP_Polygon {
 		glm::mat4 m_localToWorld;
 		AABB aabb;
 		WIP_Polygon::CollisionShape* collider;
+		WIP_Polygon::ContactManifold manifold;
 		std::string name;
 		glm::vec4 color;
 		bool enable_render;
+		bool is_static;
 		Collider();
 		Collider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation);
 		void UpdateTransform(glm::vec3 _position, glm::quat _rotation, glm::vec3 _scale);

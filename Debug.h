@@ -20,6 +20,7 @@ namespace WIP_Polygon {
         int id;
         unsigned int VAO;
         unsigned int VBO;
+
         std::vector<float> verts;
         Collider* collider;
         DebugMesh();

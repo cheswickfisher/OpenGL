@@ -15,6 +15,10 @@
 #include "Collider.h"
 #include "BoxCollider.h"
 #include "QuadCollider.h"
+#include "Textures.h"
+#include "Colors.h"
+#include "MeshRenderer.h"
+#include "RenderShapes.h"
 
 #include <glm\glm\glm.hpp>
 #include <glm\glm\gtc\matrix_transform.hpp>
@@ -24,11 +28,13 @@
 
 #include <iostream>
 #include <string>
+
+void updatePhysics();
+void render();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
-//void checkCollision(WIP_Polygon::BoxCollider a, WIP_Polygon::BoxCollider b, glm::vec3& offset);
 bool checkOverlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold);
 void updateCameraTransform();
 void updateTransforms();
@@ -48,26 +54,63 @@ float pitch = 0.0f;
 float yaw = 0.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(0.0f,0.0f,0.0f) };
-WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f)};
-WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.8f), glm::vec3(1.8f,-0.6f, 0.9f), glm::vec3(0.0f, 0.0f, 0.0f) };
-WIP_Polygon::QuadCollider ground_collider{ glm::vec3(10.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f)};
-CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(0.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
-Rigidbody obstacle{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
-Rigidbody obstacle_2{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_2_collider };
-Rigidbody plane{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),&ground_collider};
-GameObject debugCollider{ glm::vec3(0.1f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f) };
-std::vector<WIP_Polygon::Collider*>colliders{
-    &player_collider, &obstacle_collider, &obstacle_2_collider, &ground_collider
-};
-CollisionHandler collisionHandler;
-glm::vec3 dirLightDirection(-0.2f, -1.0f, -0.3f);
-glm::vec3 dirLightColor(1.0f, 1.0f, 1.0f);
 
 Materials materials;
+WIP_Polygon::Debug debug;
+Shader lightingShader;
+Shader debugShader;
+GLFWwindow* window;
+unsigned int cubeTexture;
+unsigned int planeTexture;
+unsigned int playerTexture;
+unsigned int planeVAO;
+unsigned int cubeVAO;
 
 float cubeVertices[] = {
     // positions          // texture Coords
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+std::vector<float>cube_verts = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
      0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -120,6 +163,33 @@ float planeVertices[] = {
     -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
      5.0f, -0.5f, -5.0f,  2.0f, 2.0f
 };
+
+WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(0.0f,0.0f,0.0f) };
+WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f)};
+WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.8f), glm::vec3(1.8f,-0.6f, 0.8f), glm::vec3(0.0f, 45.0f, 0.0f) };
+WIP_Polygon::QuadCollider ground_collider{ glm::vec3(10.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f)};
+CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(0.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
+Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
+Rigidbody obstacle_2{ obstacle_2_collider.scale, obstacle_2_collider.center, glm::vec3(0.0f, 45.0f, 0.0f),&obstacle_2_collider };
+Rigidbody plane{ ground_collider.scale, ground_collider.center, glm::vec3(90.0f, 0.0f, 0.0f), &ground_collider };
+GameObject debugCollider{ glm::vec3(0.1f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f) };
+WIP_Polygon::MeshRenderer player_mr{&WIP_Polygon::RenderShapes::cube, &lightingShader, &playerTexture, &playerObject};
+WIP_Polygon::MeshRenderer obstacle_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle };
+WIP_Polygon::MeshRenderer obstacle_2_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle_2 };
+WIP_Polygon::MeshRenderer plane_mr{ &WIP_Polygon::RenderShapes::plane, &lightingShader, &planeTexture, &plane };
+
+std::vector<WIP_Polygon::Collider*>colliders{
+    &player_collider, &obstacle_collider, &obstacle_2_collider, &ground_collider
+};
+
+std::vector<WIP_Polygon::MeshRenderer*>mesh_renderers{
+    &player_mr, &obstacle_mr, &obstacle_2_mr, &plane_mr
+};
+
+CollisionHandler collisionHandler;
+glm::vec3 dirLightDirection(-0.2f, -1.0f, -0.3f);
+glm::vec3 dirLightColor(1.0f, 1.0f, 1.0f);
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -127,7 +197,8 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGLAdvanced", NULL, NULL);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGLAdvanced", NULL, NULL);
+
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << '\n';
         glfwTerminate();
@@ -146,151 +217,115 @@ int main() {
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    Shader lightingShader("C:/OPENGL/shaders/depth_testing.vs", "C:/OPENGL/shaders/depth_testing.fs");
-    Shader debugShader("C:/OPENGL/shaders/debug_lines.vs", "C:/OPENGL/shaders/debug_lines.fs");
+    lightingShader = Shader("C:/OPENGL/shaders/depth_testing.vs", "C:/OPENGL/shaders/depth_testing.fs");
+    debugShader = Shader("C:/OPENGL/shaders/debug_lines.vs", "C:/OPENGL/shaders/debug_lines.fs");
 
     glEnable(GL_DEPTH_TEST);
 
-    unsigned int cubeVAO, cubeVBO;
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &cubeVBO);
-    glBindVertexArray(cubeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glBindVertexArray(0);
+    player_collider.is_static = false;
 
-    unsigned int planeVAO, planeVBO;
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);  
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
-    glBindVertexArray(0);
+    for (int i = 0; i < mesh_renderers.size(); i++) {
+        mesh_renderers[i]->SetupMesh();
+    }
 
-    unsigned int lineVAO, lineVBO;
-    float lineVertices[] = {
-        0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f
-    };
-    glGenVertexArrays(1, &lineVAO);
-    glGenBuffers(1, &lineVBO);
-    glBindVertexArray(lineVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), &lineVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glBindVertexArray(0);
-
-    WIP_Polygon::Debug debug = WIP_Polygon::Debug();
+    debug = WIP_Polygon::Debug();
     debug.Setup(debugShader);
     for (int i = 0; i < colliders.size(); i++) {
         debug.AddMesh(colliders[i]);
     }
 
-    unsigned int cubeTexture = loadTexture("C:/OPENGL/textures/sandstone_brick_wall_diffuse.png");
-    unsigned int planeTexture = loadTexture("C:/OPENGL/textures/pavement_diffuse.png");
-    unsigned int playerTexture = loadTexture("C:/OPENGL/textures/Rock_CliffLayered_albedo.png");
+    cubeTexture = loadTexture(WIP_Polygon::Textures::sandstone_brick_diffuse);
+    planeTexture = loadTexture(WIP_Polygon::Textures::pavement_diffuse);
+    playerTexture = loadTexture(WIP_Polygon::Textures::rock_cliff_albedo);
 
-    lightingShader.setInt("texture1", 0);
+    const float fps = 100;
+    const float fixed_dt = 1 / fps;
+    float accumulator = 0;
+    float frame_start = static_cast<float>(glfwGetTime());
 
     while (!glfwWindowShouldClose(window)) {
+
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
+        accumulator += deltaTime;
         lastFrame = currentFrame;
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = camera.ViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(fov), a, 0.1f, 100.0f);
+        if (accumulator > 0.2f) {
+            accumulator = 0.2f;
+        }
 
         processInput(window);
-        updateTransforms();
 
-        glm::vec3 initial_player_pos = playerObject.position;
-        glm::vec3 offset = glm::vec3(0.0f);
-        glm::vec3 combined_offset{}; //using this for debugging
-        WIP_Polygon::ContactManifold manifold{};
-        bool overlap{};
-        float total_pen{std::numeric_limits<float>::max()};
-        int iterations = 0;
-        while (total_pen > 0.0f + 0.001f) {
-            total_pen = 0.0f;
-            for (int i = 0; i < colliders.size(); i++) {
-                if (playerObject.collider->collider->id == colliders[i]->collider->id) { continue; }
-                overlap = checkOverlap(playerObject.collider, colliders[i], manifold) || overlap;
-                offset = manifold.contact_normal * glm::abs(manifold.contact_penetration);
-                playerObject.position = playerObject.position + offset;
-                combined_offset += offset;
-                total_pen += glm::abs(manifold.contact_penetration);
-                manifold = WIP_Polygon::ContactManifold();
-                updateTransforms();
-            }
-            iterations += 1;
-        }
-        std::cout << "solver iterations: " << iterations << "\n";
-        if (overlap) {
-            playerObject.collider->color = Colors::Red;
-        }
-        if (!overlap) {
-            playerObject.collider->color = Colors::Green;
+        while (accumulator > fixed_dt) {
+            updatePhysics();
+            accumulator -= fixed_dt;
         }
 
-        glm::vec4 col{};
-        updateTransforms();
-        updateCameraTransform();
-        debug.UpdateTransforms(view, projection);
-
-        playerObject.collider->DrawAxes();
-
-        //debugCollider.position = initial_player_pos + combined_offset;
-        
-        debug.DrawDebugMeshes();
-
-        lightingShader.use();
-        lightingShader.setMat4("view", view);
-        lightingShader.setMat4("projection", projection);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cubeTexture);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, obstacle.position);
-        lightingShader.setMat4("model", model);
-       //glDrawArrays(GL_TRIANGLES, 0, 36);
-        
-        glBindTexture(GL_TEXTURE_2D, playerTexture);
-        model = glm::mat4(1.0f);
-        model =  glm::translate(model, playerObject.position) * glm::toMat4(playerObject.rotation) * glm::scale(model, playerObject.scale);
-        lightingShader.setMat4("model", model);
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glBindVertexArray(planeVAO);
-        glBindTexture(GL_TEXTURE_2D, planeTexture);
-        lightingShader.setMat4("model", glm::mat4(1.0f));
-        //glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        render();
     }
 
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteBuffers(1, &cubeVBO);
-    glDeleteVertexArrays(1, &planeVAO);
-    glDeleteBuffers(1, &planeVBO);
+    for (int i = 0; i < mesh_renderers.size(); i++) {
+        glDeleteVertexArrays(1, &(*mesh_renderers[i]).VAO);
+        glDeleteBuffers(1, &(*mesh_renderers[i]).VBO);
+    }
 
     glfwTerminate();
 	return 0;
 }
+
+void updatePhysics() {
+    updateTransforms();
+    glm::vec3 initial_player_pos = playerObject.position;
+    glm::vec3 offset = glm::vec3(0.0f);
+    bool overlap{};
+    float total_pen{ std::numeric_limits<float>::max() };
+    int iterations = 0;
+    int max_iterations = 4;
+    while (total_pen > 0.0f + 0.001f && iterations < max_iterations) {
+        total_pen = 0.0f;
+        for (int i = 0; i < colliders.size(); i++) {
+            if (playerObject.collider->collider->id == colliders[i]->collider->id) { continue; }
+            colliders[i]->manifold = WIP_Polygon::ContactManifold();
+            overlap = checkOverlap(playerObject.collider, colliders[i], colliders[i]->manifold) || overlap;
+            offset = colliders[i]->manifold.contact_normal * glm::abs(colliders[i]->manifold.contact_penetration);
+            playerObject.position = playerObject.position + offset;
+            total_pen += glm::abs(colliders[i]->manifold.contact_penetration);
+            updateTransforms();
+        }
+        iterations += 1;
+    }
+}
+
+void render() {
+    updateCameraTransform();
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = camera.ViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(fov), a, 0.1f, 100.0f);
+
+    updateCameraTransform();
+    debug.UpdateTransforms(view, projection);
+
+    playerObject.collider->DrawAxes();
+
+    debug.DrawDebugMeshes();
+    
+    lightingShader.use();
+    lightingShader.setMat4("view", view);
+    lightingShader.setMat4("projection", projection);
+
+    for (int i = 0; i < mesh_renderers.size(); i++) {
+        mesh_renderers[i]->game_object->UpdateTransform();
+        mesh_renderers[i]->DrawMesh();
+    }    
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+}
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -353,17 +388,13 @@ void processInput(GLFWwindow* window) {
 
 }
 
-/*void checkCollision(WIP_Polygon::BoxCollider a, WIP_Polygon::BoxCollider b, glm::vec3& offset) {
-    offset = collisionHandler.TestOBBOBB_3(a, b);
-}*/
-
 bool checkOverlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold) {
     bool overlap = collisionHandler.Overlap(a, b, manifold);
     return overlap;
 }
 
 void updateTransforms() {
-    playerObject.UpdateRotation();
+    playerObject.UpdateTransform();
     playerObject.collider->UpdateTransform(playerObject.position, playerObject.rotation, playerObject.scale);
     debugCollider.rotation = playerObject.rotation;
     obstacle.collider->center = obstacle.position;

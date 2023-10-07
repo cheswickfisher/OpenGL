@@ -427,7 +427,6 @@ public:
 			, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f), Colors::Orange, 1.0);
 #endif
 		if (e.max_distance > 0.0f) {
-			std::cout << "edge exit" << "\n";
 			return false;
 		}
 //#define DEBUG

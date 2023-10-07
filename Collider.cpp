@@ -22,7 +22,9 @@ namespace WIP_Polygon {
 		collider{ nullptr },
 		name{ "none" },
 		color{ 0.0f, 1.0f, 0.0f, 1.0f },
-		enable_render {true}
+		enable_render {true},
+		is_static {true},
+		manifold{}
 	{}
 	Collider::Collider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation) :
 		center{ _position },
@@ -49,7 +51,9 @@ namespace WIP_Polygon {
 			) *
 			glm::scale(glm::mat4(1.0f), _scale) 
 		},
-		color{ 0.0f, 1.0f, 0.0f, 1.0f }
+		color{ 0.0f, 1.0f, 0.0f, 1.0f },
+		is_static{true},
+		manifold{}
 	{}
 	void Collider::UpdateTransform(glm::vec3 _position, glm::quat _rotation, glm::vec3 _scale) {
 		center = _position;
