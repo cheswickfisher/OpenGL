@@ -30,17 +30,17 @@ public:
 	const float EPSILON = 0.001f;
 	const float EPSILONB = 0.01f;
 	const float PARALLEL = 0.99f;
-	bool Intersect(AABB a, AABB b) {
-			return 
+	bool Intersect(WIP_Polygon::AABB a, WIP_Polygon::AABB b) {
+			/*return 
 				a.minX <= b.maxX &&
 				a.maxX >= b.minX &&
 				a.minY <= b.maxY &&
 				a.maxY >= b.minY &&
 				a.minZ <= b.maxZ &&
-				a.maxZ >= b.minZ;
+				a.maxZ >= b.minZ;*/
 	}
 
-	glm::vec3 SeparatingAxis(AABB a, AABB b) {
+	glm::vec3 SeparatingAxis(WIP_Polygon::AABB a, WIP_Polygon::AABB b) {
 		glm::vec3 yAxis = glm::normalize(glm::vec3(0.0f, a.center.y - b.center.y, 0.0f));
 		glm::vec3 xAxis = glm::normalize(glm::vec3(a.center.x - b.center.x, 0.0f, 0.0f));
 		glm::vec3 zAxis = glm::normalize(glm::vec3(0.0f, 0.0f, a.center.z - b.center.z));

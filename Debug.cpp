@@ -1,6 +1,4 @@
 #include "Debug.h"
-#include "Colors.h"
-#include "Collider.h"
 
 namespace WIP_Polygon {
     //Collider;
@@ -15,6 +13,9 @@ namespace WIP_Polygon {
     unsigned int lineVBO{};
     unsigned int cubeVAO{};
     unsigned int cubeVBO{};
+    unsigned int circleVAO{};
+    unsigned int circleVBO{};
+
     Shader debugShader{};
     float debug_line_verts[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     std::vector<float>debug_cube_verts = {   
@@ -60,6 +61,7 @@ namespace WIP_Polygon {
         -0.5f,  0.5f,  0.5f,
         -0.5f,  0.5f, -0.5f,
     };
+    std::vector<float>debug_circle_verts{};
 
     Debug::Debug() :
         debug_meshes{}
@@ -83,6 +85,16 @@ namespace WIP_Polygon {
         glBufferData(GL_ARRAY_BUFFER, /*sizeof(debug_cube_verts)*/ debug_cube_verts.size() * sizeof(GLfloat), /*&debug_cube_verts*/&debug_cube_verts[0], GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glBindVertexArray(0);
+        //circle
+        DefineCircleVerts(45);
+        glGenVertexArrays(1, &circleVAO);
+        glGenBuffers(1, &circleVBO);
+        glBindVertexArray(circleVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, circleVAO);
+        glBufferData(GL_ARRAY_BUFFER, debug_circle_verts.size() * sizeof(GLfloat), &debug_circle_verts[0], GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
         glBindVertexArray(0);
 	}    
     void Debug::AddMesh(WIP_Polygon::Collider* _collider) {
@@ -156,6 +168,44 @@ namespace WIP_Polygon {
         glBindVertexArray(0);
         glLineWidth(1.0f);
     }
+    void Debug::DrawDebugSphere(glm::vec3 position, float radius, glm::vec4 color, float line_width) {
+        glm::quat rot_X = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        glm::quat rot_Y = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position) * glm::scale(model, radius * glm::vec3(1.0f));
+        debugShader.use();
+        debugShader.setMat4("model", model);
+        debugShader.setVec4("color", color);
+        glLineWidth(line_width);
+        glBindVertexArray(circleVAO);
+        glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, position) * glm::toMat4(rot_X) * glm::scale(model, radius * glm::vec3(1.0f));
+        debugShader.setMat4("model", model);
+        glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, position) * glm::toMat4(rot_Y) * glm::scale(model, radius * glm::vec3(1.0f));
+        debugShader.setMat4("model", model);
+        glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
+        glBindVertexArray(0);
+        glLineWidth(1.0f);
+    }
+
+    void Debug::DefineCircleVerts(int _num_verts) {
+        _num_verts = glm::max(3, _num_verts);
+        float step = 360.0f / static_cast<float>(_num_verts);
+        std::vector<float>verts{};
+        for (float i = 0.0f; i < 360.0f; i += step) {
+            verts.push_back(glm::cos(glm::radians(i)));
+            verts.push_back(glm::sin(glm::radians(i)));
+        }
+        verts.erase(verts.begin() + verts.size() - 1);
+        verts.erase(verts.begin() + verts.size() - 1);
+        verts.push_back(verts[0]);
+        verts.push_back(verts[1]);
+        debug_circle_verts = verts;
+    }
+
     void Debug::DrawDebugMeshes() {
         std::unordered_map<int, DebugMesh>::iterator it;
         for (it = debug_meshes.begin(); it != debug_meshes.end(); it++) {

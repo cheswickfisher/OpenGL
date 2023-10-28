@@ -19,6 +19,8 @@
 #include "Colors.h"
 #include "MeshRenderer.h"
 #include "RenderShapes.h"
+#include "Octree.h"
+#include "Node.h"
 
 #include <glm\glm\glm.hpp>
 #include <glm\glm\gtc\matrix_transform.hpp>
@@ -29,6 +31,9 @@
 #include <iostream>
 #include <string>
 
+void TestCollision(WIP_Polygon::AABB* _pA, WIP_Polygon::AABB* _pB);
+void TestAllCollisions(WIP_Polygon::Node* _pTree);
+void update();
 void updatePhysics();
 void render();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -37,7 +42,7 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
 bool checkOverlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold);
 void updateCameraTransform();
-void updateTransforms();
+//void updateTransforms();
 unsigned int loadTexture(char const* path);
 
 float fov = 45.0f;
@@ -66,126 +71,35 @@ unsigned int playerTexture;
 unsigned int planeVAO;
 unsigned int cubeVAO;
 
-float cubeVertices[] = {
-    // positions          // texture Coords
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-std::vector<float>cube_verts = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-float planeVertices[] = {
-    // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
-     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-    -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-
-     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-     5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-};
-
-WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(0.0f,0.0f,0.0f) };
+WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(-2.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f)};
 WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f)};
-WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.8f), glm::vec3(1.8f,-0.6f, 0.8f), glm::vec3(0.0f, 45.0f, 0.0f) };
+WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.5f), glm::vec3(1.8f,-0.75f, 0.8f), glm::vec3(0.0f, 45.0f, 0.0f) };
 WIP_Polygon::QuadCollider ground_collider{ glm::vec3(10.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f)};
-CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(0.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
-Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
-Rigidbody obstacle_2{ obstacle_2_collider.scale, obstacle_2_collider.center, glm::vec3(0.0f, 45.0f, 0.0f),&obstacle_2_collider };
-Rigidbody plane{ ground_collider.scale, ground_collider.center, glm::vec3(90.0f, 0.0f, 0.0f), &ground_collider };
-GameObject debugCollider{ glm::vec3(0.1f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f) };
+WIP_Polygon::CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(-2.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
+WIP_Polygon::Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
+WIP_Polygon::Rigidbody obstacle_2{ obstacle_2_collider.scale, obstacle_2_collider.center, glm::vec3(0.0f, 45.0f, 0.0f),&obstacle_2_collider };
+WIP_Polygon::Rigidbody plane{ ground_collider.scale, ground_collider.center, glm::vec3(90.0f, 0.0f, 0.0f), &ground_collider };
+WIP_Polygon::AABB player_aabb{ &playerObject };
+WIP_Polygon::AABB obstacle_aabb{ &obstacle };
+WIP_Polygon::AABB obstacle_2_aabb{ &obstacle_2 };
+WIP_Polygon::AABB ground_aabb{ &plane };
 WIP_Polygon::MeshRenderer player_mr{&WIP_Polygon::RenderShapes::cube, &lightingShader, &playerTexture, &playerObject};
 WIP_Polygon::MeshRenderer obstacle_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle };
 WIP_Polygon::MeshRenderer obstacle_2_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle_2 };
 WIP_Polygon::MeshRenderer plane_mr{ &WIP_Polygon::RenderShapes::plane, &lightingShader, &planeTexture, &plane };
 
-std::vector<WIP_Polygon::Collider*>colliders{
-    &player_collider, &obstacle_collider, &obstacle_2_collider, &ground_collider
+std::vector<WIP_Polygon::AABB*>aabbs{
+    &player_aabb, &obstacle_aabb, &obstacle_2_aabb, &ground_aabb
+};
+
+std::vector<WIP_Polygon::GameObject*>gameobjects{
+    &playerObject, &obstacle, &obstacle_2, &plane
 };
 
 std::vector<WIP_Polygon::MeshRenderer*>mesh_renderers{
     &player_mr, &obstacle_mr, &obstacle_2_mr, &plane_mr
 };
-
+WIP_Polygon::Octree* octree;
 CollisionHandler collisionHandler;
 glm::vec3 dirLightDirection(-0.2f, -1.0f, -0.3f);
 glm::vec3 dirLightColor(1.0f, 1.0f, 1.0f);
@@ -222,7 +136,7 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
-    player_collider.is_static = false;
+    player_aabb.rigidbody->is_static = false;
 
     for (int i = 0; i < mesh_renderers.size(); i++) {
         mesh_renderers[i]->SetupMesh();
@@ -230,9 +144,15 @@ int main() {
 
     debug = WIP_Polygon::Debug();
     debug.Setup(debugShader);
-    for (int i = 0; i < colliders.size(); i++) {
-        debug.AddMesh(colliders[i]);
+    for (int i = 0; i < aabbs.size(); i++) {
+        debug.AddMesh(aabbs[i]->rigidbody->collider);
     }
+
+    octree = new WIP_Polygon::Octree(glm::vec3(0.0f), 5.0f, 3);
+    octree->InsertObject(octree->root, &player_aabb);
+    octree->InsertObject(octree->root, &obstacle_aabb);
+    octree->InsertObject(octree->root, &obstacle_2_aabb);
+    octree->InsertObject(octree->root, &ground_aabb);
 
     cubeTexture = loadTexture(WIP_Polygon::Textures::sandstone_brick_diffuse);
     planeTexture = loadTexture(WIP_Polygon::Textures::pavement_diffuse);
@@ -256,6 +176,8 @@ int main() {
 
         processInput(window);
 
+        update();
+
         while (accumulator > fixed_dt) {
             updatePhysics();
             accumulator -= fixed_dt;
@@ -273,9 +195,23 @@ int main() {
 	return 0;
 }
 
+void update() {
+    for (int i = 0; i < gameobjects.size(); i++) {
+        if (!gameobjects[i]->is_static) {
+            gameobjects[i]->UpdateTransform();
+        }
+    }
+}
+
 void updatePhysics() {
-    updateTransforms();
-    glm::vec3 initial_player_pos = playerObject.position;
+    //update dynamic objects nodes in octree
+    player_aabb.rigidbody->collider->UpdateTransform(player_aabb.rigidbody->position, player_aabb.rigidbody->rotation, player_aabb.rigidbody->scale);
+    player_aabb.center = player_aabb.rigidbody->position;
+    octree->RemoveObject(octree->root, &player_aabb);
+    octree->InsertObject(octree->root, &player_aabb);
+
+    TestAllCollisions(octree->root);
+    /*glm::vec3 initial_player_pos = playerObject.position;
     glm::vec3 offset = glm::vec3(0.0f);
     bool overlap{};
     float total_pen{ std::numeric_limits<float>::max() };
@@ -283,18 +219,29 @@ void updatePhysics() {
     int max_iterations = 4;
     while (total_pen > 0.0f + 0.001f && iterations < max_iterations) {
         total_pen = 0.0f;
-        for (int i = 0; i < colliders.size(); i++) {
-            if (playerObject.collider->collider->id == colliders[i]->collider->id) { continue; }
-            colliders[i]->manifold = WIP_Polygon::ContactManifold();
-            overlap = checkOverlap(playerObject.collider, colliders[i], colliders[i]->manifold) || overlap;
-            offset = colliders[i]->manifold.contact_normal * glm::abs(colliders[i]->manifold.contact_penetration);
-            playerObject.position = playerObject.position + offset;
-            total_pen += glm::abs(colliders[i]->manifold.contact_penetration);
-            updateTransforms();
+        for (int i = 0; i < aabbs.size(); i++) {
+            if (aabbs[i]->rigidbody->is_static) { continue; }
+            WIP_Polygon::Collider* collider_a = aabbs[i]->rigidbody->collider;
+            aabbs[i]->center = aabbs[i]->rigidbody->position;
+            collider_a->UpdateTransform(aabbs[i]->rigidbody->position, aabbs[i]->rigidbody->rotation, aabbs[i]->rigidbody->scale);
+            for (int j = 0; j < aabbs.size(); j++) {
+                if (aabbs[i]->rigidbody->collider->collider->id == aabbs[j]->rigidbody->collider->collider->id) { continue; }
+                WIP_Polygon::Collider* collider_b = aabbs[j]->rigidbody->collider;
+                collider_b->UpdateTransform(aabbs[j]->rigidbody->position, aabbs[j]->rigidbody->rotation, aabbs[j]->rigidbody->scale);
+                collider_b->manifold = WIP_Polygon::ContactManifold();
+                overlap = checkOverlap(collider_a, collider_b, collider_b->manifold) || overlap;
+                offset = collider_b->manifold.contact_normal * glm::abs(collider_b->manifold.contact_penetration);
+                total_pen += glm::abs(collider_b->manifold.contact_penetration);
+                aabbs[i]->rigidbody->move_delta = offset;
+                aabbs[i]->rigidbody->UpdateTransform();
+                aabbs[i]->center = aabbs[i]->rigidbody->position;
+                collider_a->UpdateTransform(aabbs[i]->rigidbody->position, aabbs[i]->rigidbody->rotation, aabbs[i]->rigidbody->scale);
+            }
         }
         iterations += 1;
-    }
+    }*/
 }
+
 
 void render() {
     updateCameraTransform();
@@ -306,13 +253,18 @@ void render() {
     glm::mat4 view = camera.ViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(fov), a, 0.1f, 100.0f);
 
-    updateCameraTransform();
     debug.UpdateTransforms(view, projection);
-
+   
     playerObject.collider->DrawAxes();
-
     debug.DrawDebugMeshes();
-    
+    WIP_Polygon::Debug::DrawDebugSphere(obstacle_2_aabb.center, obstacle_2_aabb.radius.x, Colors::Red, 2.0f);
+    WIP_Polygon::Debug::DrawDebugSphere(obstacle_aabb.center, obstacle_aabb.radius.x, Colors::Red, 2.0f);
+    WIP_Polygon::Debug::DrawDebugSphere(player_aabb.center, player_aabb.radius.x, Colors::Purple, 2.0f);
+    WIP_Polygon::Debug::DrawDebugCube(player_aabb.pCurrentNode->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(player_aabb.pCurrentNode->halfWidth * 2.0f), Colors::Red, 10.0f);
+    WIP_Polygon::Debug::DrawDebugCube(obstacle_2_aabb.pCurrentNode->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(obstacle_2_aabb.pCurrentNode->halfWidth * 2.0f), Colors::Blue, 10.0f);
+
+    octree->DrawOctree(octree->root, octree->levels, 0);
+
     lightingShader.use();
     lightingShader.setMat4("view", view);
     lightingShader.setMat4("projection", projection);
@@ -324,6 +276,87 @@ void render() {
 
     glfwSwapBuffers(window);
     glfwPollEvents();
+}
+
+void TestAllCollisions(WIP_Polygon::Node* _pTree) {
+    const int MAX_DEPTH = 40;
+    static WIP_Polygon::Node* ancestorStack[MAX_DEPTH];
+    static int depth = 0;
+    ancestorStack[depth++] = _pTree;
+    for (int n = 0; n < depth; n++) {
+        WIP_Polygon::AABB* pA{ nullptr };
+        WIP_Polygon::AABB* pB{ nullptr };
+        for (pA = ancestorStack[n]->pObjList; pA; pA = pA->pNextObject) {
+            for (pB = _pTree->pObjList; pB; pB = pB->pNextObject) {
+                if (pA == pB) break;//continue flips the testing order
+                if (pA->rigidbody->is_static && pB->rigidbody->is_static) { continue; }
+                if (!pB->rigidbody->is_static) { TestCollision(pB, pA); }
+                else { TestCollision(pA, pB); }                  
+            }
+        }
+    }
+    for (int i = 0; i < _pTree->pChild.size(); i++) {        
+        if (_pTree->pChild[i]) {
+            TestAllCollisions(_pTree->pChild[i]);
+        }
+    }
+    depth--;
+}
+
+void TestCollision(WIP_Polygon::AABB* _pA, WIP_Polygon::AABB* _pB) {
+    glm::vec3 initial_pos = _pA->rigidbody->position;
+    glm::vec3 offset = glm::vec3(0.0f);
+    bool overlap{};
+    float total_pen{ std::numeric_limits<float>::max() };
+    int iterations = 0;
+    int max_iterations = 4;
+    while (total_pen > 0.0f + 0.001f && iterations < max_iterations) {
+        total_pen = 0.0f;
+        WIP_Polygon::Collider* collider_a = _pA->rigidbody->collider;
+        _pA->center = _pA->rigidbody->position;
+        collider_a->UpdateTransform(_pA->rigidbody->position, _pA->rigidbody->rotation, _pA->rigidbody->scale);
+        WIP_Polygon::Collider* collider_b = _pB->rigidbody->collider;
+        collider_b->UpdateTransform(_pB->rigidbody->position, _pB->rigidbody->rotation, _pB->rigidbody->scale);
+        collider_b->manifold = WIP_Polygon::ContactManifold();
+        overlap = checkOverlap(collider_a, collider_b, collider_b->manifold) || overlap;
+        offset = collider_b->manifold.contact_normal * glm::abs(collider_b->manifold.contact_penetration);
+        total_pen += glm::abs(collider_b->manifold.contact_penetration);
+        _pA->rigidbody->move_delta = offset;
+        _pA->rigidbody->UpdateTransform();
+        _pA->center = _pA->rigidbody->position;
+        collider_a->UpdateTransform(_pA->rigidbody->position, _pA->rigidbody->rotation, _pA->rigidbody->scale);
+
+        iterations += 1;
+    }
+    /* glm::vec3 initial_player_pos = playerObject.position;
+     glm::vec3 offset = glm::vec3(0.0f);
+     bool overlap{};
+     float total_pen{ std::numeric_limits<float>::max() };
+     int iterations = 0;
+     int max_iterations = 4;
+     while (total_pen > 0.0f + 0.001f && iterations < max_iterations) {
+         total_pen = 0.0f;
+         for (int i = 0; i < aabbs.size(); i++) {
+             if (aabbs[i]->rigidbody->is_static) { continue; }
+             WIP_Polygon::Collider* collider_a = aabbs[i]->rigidbody->collider;
+             aabbs[i]->center = aabbs[i]->rigidbody->position;
+             collider_a->UpdateTransform(aabbs[i]->rigidbody->position, aabbs[i]->rigidbody->rotation, aabbs[i]->rigidbody->scale);
+             for (int j = 0; j < aabbs.size(); j++) {
+                 if (aabbs[i]->rigidbody->collider->collider->id == aabbs[j]->rigidbody->collider->collider->id) { continue; }
+                 WIP_Polygon::Collider* collider_b = aabbs[j]->rigidbody->collider;
+                 collider_b->UpdateTransform(aabbs[j]->rigidbody->position, aabbs[j]->rigidbody->rotation, aabbs[j]->rigidbody->scale);
+                 collider_b->manifold = WIP_Polygon::ContactManifold();
+                 overlap = checkOverlap(collider_a, collider_b, collider_b->manifold) || overlap;
+                 offset = collider_b->manifold.contact_normal * glm::abs(collider_b->manifold.contact_penetration);
+                 total_pen += glm::abs(collider_b->manifold.contact_penetration);
+                 aabbs[i]->rigidbody->move_delta = offset;
+                 aabbs[i]->rigidbody->UpdateTransform();
+                 aabbs[i]->center = aabbs[i]->rigidbody->position;
+                 collider_a->UpdateTransform(aabbs[i]->rigidbody->position, aabbs[i]->rigidbody->rotation, aabbs[i]->rigidbody->scale);
+             }
+         }
+         iterations += 1;
+     }*/
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -354,56 +387,47 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        playerObject.position += playerObject.Forward() * deltaTime * playerObject.moveSpeed;        
+        playerObject.move_delta = playerObject.Forward() * deltaTime * playerObject.moveSpeed;        
     }
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        playerObject.position += -playerObject.Forward() * deltaTime * playerObject.moveSpeed;
+        playerObject.move_delta = -playerObject.Forward() * deltaTime * playerObject.moveSpeed;
     }
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        playerObject.yaw_delta += playerObject.turnSpeed * deltaTime;
+        playerObject.yaw_delta = playerObject.turnSpeed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        playerObject.yaw_delta -= playerObject.turnSpeed * deltaTime;
+        playerObject.yaw_delta = -playerObject.turnSpeed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        playerObject.pitch_delta += playerObject.turnSpeed * deltaTime;
+        playerObject.pitch_delta = playerObject.turnSpeed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        playerObject.pitch_delta -= playerObject.turnSpeed * deltaTime;
+        playerObject.pitch_delta = -playerObject.turnSpeed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        playerObject.roll_delta += playerObject.turnSpeed * deltaTime;
+        playerObject.roll_delta = playerObject.turnSpeed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        playerObject.roll_delta -= playerObject.turnSpeed * deltaTime;
+        playerObject.roll_delta = -playerObject.turnSpeed * deltaTime;
     }
 
 
+}
+
+void broadphase() {
+    
 }
 
 bool checkOverlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold) {
     bool overlap = collisionHandler.Overlap(a, b, manifold);
     return overlap;
-}
-
-void updateTransforms() {
-    playerObject.UpdateTransform();
-    playerObject.collider->UpdateTransform(playerObject.position, playerObject.rotation, playerObject.scale);
-    debugCollider.rotation = playerObject.rotation;
-    obstacle.collider->center = obstacle.position;
-    playerObject.collider->center = playerObject.position;
-    playerObject.collider->aabb.center = playerObject.position;
-    playerObject.collider->rotation = playerObject.rotation;
-    playerObject.collider->u[0] = glm::normalize(playerObject.collider->rotation * glm::vec3(1.0f, 0.0f, 0.0f));
-    playerObject.collider->u[1] = glm::normalize(playerObject.collider->rotation * glm::vec3(0.0f, 1.0f, 0.0f));
-    playerObject.collider->u[2] = glm::normalize(playerObject.collider->rotation * glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 void updateCameraTransform() {

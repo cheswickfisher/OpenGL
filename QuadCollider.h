@@ -16,28 +16,24 @@ namespace WIP_Polygon {
 	public:
 		WIP_Polygon::Quad quad{};
 		QuadCollider() :
-			Collider{ glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			Collider{ glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f), &quad },
 			quad{WIP_Polygon::Quad()}
 		{
-			collider = &quad;
 		}
 		QuadCollider(glm::vec3 _scale) :
-			Collider{ _scale, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			Collider{ _scale, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f), &quad },
 			quad{ WIP_Polygon::Quad() }
 		{
-			collider = &quad;
 		}
 		QuadCollider(glm::vec3 _scale, glm::vec3 _position) :
-			Collider{ _scale, _position, glm::vec3(0.0f, 0.0f, 0.0f) },
+			Collider{ _scale, _position, glm::vec3(0.0f, 0.0f, 0.0f), &quad },
 			quad{ WIP_Polygon::Quad() } 
 		{
-			collider = &quad;
 		}
 		QuadCollider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation) :
-			Collider{ _scale, _position, _rotation },
+			Collider{ _scale, _position, _rotation, &quad },
 			quad{ WIP_Polygon::Quad() }
 		{
-			collider = &quad;
 		}
 
 		void DrawAxes() override {

@@ -1,14 +1,14 @@
-#include "Colors.h"
-#include "AABB.h"
-#include "CollisionShape.h"
-#include "Debug.h"
+//#include "Colors.h"
+//#include "AABB.h"
+//#include "CollisionShape.h"
+//#include "Debug.h"
 #include "Collider.h"
-#include <glm/glm/glm.hpp>
-#include <glm\glm\gtc\matrix_transform.hpp>
-#include <glm/glm/gtc/quaternion.hpp>
-#include <glm/glm/gtx/quaternion.hpp>
-#include <array>
-#include <string>
+//#include <glm/glm/glm.hpp>
+//#include <glm\glm\gtc\matrix_transform.hpp>
+//#include <glm/glm/gtc/quaternion.hpp>
+//#include <glm/glm/gtx/quaternion.hpp>
+//#include <array>
+//#include <string>
 
 namespace WIP_Polygon {
 	Collider::Collider() :
@@ -18,15 +18,14 @@ namespace WIP_Polygon {
 		rotation{},
 		scale{},
 		m_localToWorld{},
-		aabb{},
+		aabb{nullptr},
 		collider{ nullptr },
 		name{ "none" },
 		color{ 0.0f, 1.0f, 0.0f, 1.0f },
 		enable_render {true},
-		is_static {true},
 		manifold{}
 	{}
-	Collider::Collider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation) :
+	Collider::Collider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, CollisionShape* _collider) :
 		center{ _position },
 		rotation{
 			glm::normalize(
@@ -51,12 +50,18 @@ namespace WIP_Polygon {
 			) *
 			glm::scale(glm::mat4(1.0f), _scale) 
 		},
+		aabb{nullptr},
+		collider{_collider},
 		color{ 0.0f, 1.0f, 0.0f, 1.0f },
-		is_static{true},
+		enable_render{true},
 		manifold{}
 	{}
 	void Collider::UpdateTransform(glm::vec3 _position, glm::quat _rotation, glm::vec3 _scale) {
 		center = _position;
+		rotation = _rotation;
+		u[0] = glm::normalize(_rotation * glm::vec3(1.0f, 0.0f, 0.0f));
+		u[1] = glm::normalize(_rotation * glm::vec3(0.0f, 1.0f, 0.0f));
+		u[2] = glm::normalize(_rotation * glm::vec3(0.0f, 0.0f, 1.0f));
 		m_localToWorld = glm::translate(glm::mat4(1.0f), _position) * glm::toMat4(_rotation) * glm::scale(glm::mat4(1.0f), _scale);
 	}
 	glm::vec3 Collider::GetSupport(glm::vec3 direction) {

@@ -6,8 +6,8 @@
 #include "IDGenerator.h"
 #include "Shader.h"
 #include "RenderShapes.h"
-class GameObject;
 namespace WIP_Polygon {
+	class GameObject;
 	class MeshRenderer {
 	public:
 		GameObject* game_object;

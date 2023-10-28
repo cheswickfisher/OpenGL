@@ -7,6 +7,10 @@ namespace WIP_Polygon {
 	public:
 		static std::vector<float>cube;
 		static std::vector<float>plane;
+		static std::vector<float>circle;
+
+		static std::vector<float> CreateCircle(int _num_verts);
+		
 	};
 }
 #endif
