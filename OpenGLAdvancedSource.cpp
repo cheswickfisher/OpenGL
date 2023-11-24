@@ -2,7 +2,8 @@
 #include <glfw3.h>
 
 #include "Materials.h"
-#include "Shader.h"
+//#include "Shader.h"
+#include "Shaders.h"
 #include "Camera.h"
 #include "Model.h"
 #include "CharacterControls.h"
@@ -21,6 +22,7 @@
 #include "RenderShapes.h"
 #include "Octree.h"
 #include "Node.h"
+#include "Terrain_Volume.h"
 
 #include <glm\glm\glm.hpp>
 #include <glm\glm\gtc\matrix_transform.hpp>
@@ -30,9 +32,14 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
+void Update_Dynamic_Colliders();
+void Octree_Update();
+void Octree_Build(WIP_Polygon::Octree*& _octree, std::vector<WIP_Polygon::AABB*>_aabbs);
+void ResolveCollisions(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
 void TestCollision(WIP_Polygon::AABB* _pA, WIP_Polygon::AABB* _pB);
-void TestAllCollisions(WIP_Polygon::Node* _pTree);
+void Octree_TestAllCollisions(WIP_Polygon::Node* _pTree, std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
 void update();
 void updatePhysics();
 void render();
@@ -42,13 +49,14 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
 bool checkOverlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold);
 void updateCameraTransform();
-//void updateTransforms();
-unsigned int loadTexture(char const* path);
+void loadTerrain(char const* path);
+
 
 float fov = 45.0f;
 const float SCREEN_WIDTH = 1360.0f;
 const float SCREEN_HEIGHT = 768.0f;
 float a = SCREEN_WIDTH / SCREEN_HEIGHT;
+const float infinity = std::numeric_limits<float>::infinity();
 
 Camera camera;
 const float cameraSpeed = 5.0f;
@@ -62,43 +70,44 @@ float lastFrame = 0.0f;
 
 Materials materials;
 WIP_Polygon::Debug debug;
-Shader lightingShader;
-Shader debugShader;
 GLFWwindow* window;
-unsigned int cubeTexture;
-unsigned int planeTexture;
-unsigned int playerTexture;
+
 unsigned int planeVAO;
 unsigned int cubeVAO;
 
-WIP_Polygon::BoxCollider player_collider{ glm::vec3(0.5f), glm::vec3(-2.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f)};
+WIP_Polygon::BoxCollider player_collider{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 180.0f, 0.0f)};
 WIP_Polygon::BoxCollider obstacle_collider{ glm::vec3(2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f)};
 WIP_Polygon::BoxCollider obstacle_2_collider{ glm::vec3(0.5f), glm::vec3(1.8f,-0.75f, 0.8f), glm::vec3(0.0f, 45.0f, 0.0f) };
 WIP_Polygon::QuadCollider ground_collider{ glm::vec3(10.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f)};
-WIP_Polygon::CharacterControls playerObject{ glm::vec3(0.5f), glm::vec3(-2.0f, -0.75f, 2.0f), glm::vec3(0.0f, 180.0f, 0.0f), &player_collider};
-WIP_Polygon::Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), &obstacle_collider};
-WIP_Polygon::Rigidbody obstacle_2{ obstacle_2_collider.scale, obstacle_2_collider.center, glm::vec3(0.0f, 45.0f, 0.0f),&obstacle_2_collider };
-WIP_Polygon::Rigidbody plane{ ground_collider.scale, ground_collider.center, glm::vec3(90.0f, 0.0f, 0.0f), &ground_collider };
+WIP_Polygon::CharacterControls playerObject{ glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 180.0f, 0.0f), 10.0f, &player_collider};
+WIP_Polygon::Rigidbody obstacle{ glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1000.0f, & obstacle_collider};
+WIP_Polygon::Rigidbody obstacle_2{ obstacle_2_collider.scale, obstacle_2_collider.center, glm::vec3(0.0f, 45.0f, 0.0f), 10.0f, &obstacle_2_collider };
+WIP_Polygon::Rigidbody plane{ ground_collider.scale, ground_collider.center, glm::vec3(90.0f, 0.0f, 0.0f), infinity, &ground_collider };
 WIP_Polygon::AABB player_aabb{ &playerObject };
 WIP_Polygon::AABB obstacle_aabb{ &obstacle };
 WIP_Polygon::AABB obstacle_2_aabb{ &obstacle_2 };
 WIP_Polygon::AABB ground_aabb{ &plane };
-WIP_Polygon::MeshRenderer player_mr{&WIP_Polygon::RenderShapes::cube, &lightingShader, &playerTexture, &playerObject};
-WIP_Polygon::MeshRenderer obstacle_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle };
-WIP_Polygon::MeshRenderer obstacle_2_mr{ &WIP_Polygon::RenderShapes::cube, &lightingShader, &cubeTexture, &obstacle_2 };
-WIP_Polygon::MeshRenderer plane_mr{ &WIP_Polygon::RenderShapes::plane, &lightingShader, &planeTexture, &plane };
+WIP_Polygon::MeshRenderer player_mr{&WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::rock_cliff_albedo.first, &playerObject};
+WIP_Polygon::MeshRenderer obstacle_mr{ &WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::sandstone_brick_diffuse.first, &obstacle };
+WIP_Polygon::MeshRenderer obstacle_2_mr{ &WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader,&WIP_Polygon::Textures::sandstone_brick_diffuse.first, &obstacle_2 };
+WIP_Polygon::MeshRenderer plane_mr{ &WIP_Polygon::RenderShapes::plane, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::pavement_diffuse.first, &plane };
 
 std::vector<WIP_Polygon::AABB*>aabbs{
-    &player_aabb, &obstacle_aabb, &obstacle_2_aabb, &ground_aabb
+    &player_aabb/*, &obstacle_aabb, &obstacle_2_aabb, &ground_aabb*/
 };
 
 std::vector<WIP_Polygon::GameObject*>gameobjects{
-    &playerObject, &obstacle, &obstacle_2, &plane
+    &playerObject/*,& obstacle,& obstacle_2,& plane*/
 };
 
 std::vector<WIP_Polygon::MeshRenderer*>mesh_renderers{
-    &player_mr, &obstacle_mr, &obstacle_2_mr, &plane_mr
+    &player_mr/*, &obstacle_mr, &obstacle_2_mr, &plane_mr*/
 };
+
+const int cell_size = 10;
+WIP_Polygon::Rigidbody terrain[cell_size][cell_size][cell_size];
+WIP_Polygon::TerrainVolume terrain_volume{glm::vec3(0.0f), 1};
+
 WIP_Polygon::Octree* octree;
 CollisionHandler collisionHandler;
 glm::vec3 dirLightDirection(-0.2f, -1.0f, -0.3f);
@@ -130,33 +139,33 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
-    lightingShader = Shader("C:/OPENGL/shaders/depth_testing.vs", "C:/OPENGL/shaders/depth_testing.fs");
-    debugShader = Shader("C:/OPENGL/shaders/debug_lines.vs", "C:/OPENGL/shaders/debug_lines.fs");
-
     glEnable(GL_DEPTH_TEST);
 
+    WIP_Polygon::Shaders::loadShaders();
+    WIP_Polygon::Textures::loadTextures();
+    //loadTerrain(WIP_Polygon::Textures::grid_cell_noise_0.second);
+    terrain_volume.loadTerrain(WIP_Polygon::Textures::grid_cell_noise_0.second);
+
     player_aabb.rigidbody->is_static = false;
+    //obstacle_2_aabb.rigidbody->is_static = false;
 
     for (int i = 0; i < mesh_renderers.size(); i++) {
         mesh_renderers[i]->SetupMesh();
     }
 
     debug = WIP_Polygon::Debug();
-    debug.Setup(debugShader);
+    debug.Setup();
     for (int i = 0; i < aabbs.size(); i++) {
         debug.AddMesh(aabbs[i]->rigidbody->collider);
     }
 
-    octree = new WIP_Polygon::Octree(glm::vec3(0.0f), 5.0f, 3);
-    octree->InsertObject(octree->root, &player_aabb);
-    octree->InsertObject(octree->root, &obstacle_aabb);
-    octree->InsertObject(octree->root, &obstacle_2_aabb);
-    octree->InsertObject(octree->root, &ground_aabb);
+    //Octree_Build(octree, aabbs);
 
-    cubeTexture = loadTexture(WIP_Polygon::Textures::sandstone_brick_diffuse);
-    planeTexture = loadTexture(WIP_Polygon::Textures::pavement_diffuse);
-    playerTexture = loadTexture(WIP_Polygon::Textures::rock_cliff_albedo);
+    playerObject.name = "player";
+    //obstacle.name = "obstacle";
+    //obstacle_2.name = "obstacle_2";
+    //plane.name = "ground_plane";
+
 
     const float fps = 100;
     const float fixed_dt = 1 / fps;
@@ -164,7 +173,6 @@ int main() {
     float frame_start = static_cast<float>(glfwGetTime());
 
     while (!glfwWindowShouldClose(window)) {
-
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         accumulator += deltaTime;
@@ -190,7 +198,7 @@ int main() {
         glDeleteVertexArrays(1, &(*mesh_renderers[i]).VAO);
         glDeleteBuffers(1, &(*mesh_renderers[i]).VBO);
     }
-
+    delete octree; // do i need to do this?
     glfwTerminate();
 	return 0;
 }
@@ -204,13 +212,17 @@ void update() {
 }
 
 void updatePhysics() {
-    //update dynamic objects nodes in octree
-    player_aabb.rigidbody->collider->UpdateTransform(player_aabb.rigidbody->position, player_aabb.rigidbody->rotation, player_aabb.rigidbody->scale);
-    player_aabb.center = player_aabb.rigidbody->position;
-    octree->RemoveObject(octree->root, &player_aabb);
-    octree->InsertObject(octree->root, &player_aabb);
+    Update_Dynamic_Colliders();
 
-    TestAllCollisions(octree->root);
+    /*Octree_Update();
+
+    std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>> aabb_pairs{};
+    Octree_TestAllCollisions(octree->root, aabb_pairs);
+    ResolveCollisions(aabb_pairs);*/
+    /*for (int i = 0; i < aabb_pairs.size(); i++) {
+        std::cout << aabb_pairs[i].first->rigidbody->name << ", " << aabb_pairs[i].second->rigidbody->name << "\n";
+    }
+    std::cout << "\n";*/
     /*glm::vec3 initial_player_pos = playerObject.position;
     glm::vec3 offset = glm::vec3(0.0f);
     bool overlap{};
@@ -257,28 +269,95 @@ void render() {
    
     playerObject.collider->DrawAxes();
     debug.DrawDebugMeshes();
-    WIP_Polygon::Debug::DrawDebugSphere(obstacle_2_aabb.center, obstacle_2_aabb.radius.x, Colors::Red, 2.0f);
+    /*WIP_Polygon::Debug::DrawDebugSphere(obstacle_2_aabb.center, obstacle_2_aabb.radius.x, Colors::Red, 2.0f);
     WIP_Polygon::Debug::DrawDebugSphere(obstacle_aabb.center, obstacle_aabb.radius.x, Colors::Red, 2.0f);
     WIP_Polygon::Debug::DrawDebugSphere(player_aabb.center, player_aabb.radius.x, Colors::Purple, 2.0f);
     WIP_Polygon::Debug::DrawDebugCube(player_aabb.pCurrentNode->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(player_aabb.pCurrentNode->halfWidth * 2.0f), Colors::Red, 10.0f);
-    WIP_Polygon::Debug::DrawDebugCube(obstacle_2_aabb.pCurrentNode->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(obstacle_2_aabb.pCurrentNode->halfWidth * 2.0f), Colors::Blue, 10.0f);
+    WIP_Polygon::Debug::DrawDebugCube(obstacle_2_aabb.pCurrentNode->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(obstacle_2_aabb.pCurrentNode->halfWidth * 2.0f), Colors::Blue, 10.0f);*/
 
-    octree->DrawOctree(octree->root, octree->levels, 0);
+    //octree->DrawOctree(octree->root, octree->levels, 0);
 
-    lightingShader.use();
-    lightingShader.setMat4("view", view);
-    lightingShader.setMat4("projection", projection);
+    WIP_Polygon::Shaders::lightingShader.use();
+    WIP_Polygon::Shaders::lightingShader.setMat4("view", view);
+    WIP_Polygon::Shaders::lightingShader.setMat4("projection", projection);
 
     for (int i = 0; i < mesh_renderers.size(); i++) {
         mesh_renderers[i]->game_object->UpdateTransform();
         mesh_renderers[i]->DrawMesh();
     }    
 
+    terrain_volume.renderTerrain();
+
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
 
-void TestAllCollisions(WIP_Polygon::Node* _pTree) {
+void ResolveCollisions(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
+     glm::vec3 offset = glm::vec3(0.0f);
+     bool overlap{};
+     float total_pen{ std::numeric_limits<float>::max() };
+     int iterations = 0;
+     int max_iterations = 4;
+     while (total_pen > 0.0f + 0.001f && iterations < max_iterations) {
+         total_pen = 0.0f;
+         for (int i = 0; i < _aabb_pairs.size(); i++) {
+             //if (_aabb_pairs[i].first->rigidbody->is_static) { continue; }
+             WIP_Polygon::Collider* collider_a = _aabb_pairs[i].first->rigidbody->collider;
+             _aabb_pairs[i].first->center = _aabb_pairs[i].first->rigidbody->position;
+             collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->scale);             
+             WIP_Polygon::Collider* collider_b = _aabb_pairs[i].second->rigidbody->collider;
+             collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->scale);
+             collider_b->manifold = WIP_Polygon::ContactManifold();
+             overlap = checkOverlap(collider_a, collider_b, collider_b->manifold) || overlap;
+             offset = collider_b->manifold.contact_normal * glm::abs(collider_b->manifold.contact_penetration);
+             float fr1 = _aabb_pairs[i].second->rigidbody->mass / (_aabb_pairs[i].first->rigidbody->mass + _aabb_pairs[i].second->rigidbody->mass);
+             fr1 = glm::min(1.0f, fr1);
+             float fr2 = _aabb_pairs[i].first->rigidbody->mass / (_aabb_pairs[i].first->rigidbody->mass + _aabb_pairs[i].second->rigidbody->mass);             
+             fr2 = glm::min(1.0f, fr2);
+             glm::vec3 offset_a = offset * fr1;
+             glm::vec3 offset_b = -offset * fr2;
+             total_pen += glm::abs(collider_b->manifold.contact_penetration);
+             _aabb_pairs[i].first->rigidbody->move_delta = offset_a;
+             _aabb_pairs[i].first->rigidbody->UpdateTransform();
+             _aabb_pairs[i].first->center = _aabb_pairs[i].first->rigidbody->position;
+             collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->scale);
+             _aabb_pairs[i].second->rigidbody->move_delta = offset_b;
+             _aabb_pairs[i].second->rigidbody->UpdateTransform();
+             _aabb_pairs[i].second->center = _aabb_pairs[i].second->rigidbody->position;
+             collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->scale);
+         }
+         iterations += 1;
+     }
+
+}
+
+void Update_Dynamic_Colliders() {
+    player_aabb.rigidbody->collider->UpdateTransform(player_aabb.rigidbody->position, player_aabb.rigidbody->rotation, player_aabb.rigidbody->scale);
+    player_aabb.center = player_aabb.rigidbody->position;
+}
+
+void Octree_Update() {
+    //update dynamic objects nodes in octree
+    //TODO: collect dynamic objects in vector and loop through to update
+    player_aabb.rigidbody->collider->UpdateTransform(player_aabb.rigidbody->position, player_aabb.rigidbody->rotation, player_aabb.rigidbody->scale);
+    player_aabb.center = player_aabb.rigidbody->position;
+    obstacle_2_aabb.rigidbody->collider->UpdateTransform(obstacle_2_aabb.rigidbody->position, obstacle_2_aabb.rigidbody->rotation, obstacle_2_aabb.rigidbody->scale);
+    obstacle_2_aabb.center = obstacle_2_aabb.rigidbody->position;
+    octree->RemoveObject(octree->root, &player_aabb);
+    octree->RemoveObject(octree->root, &obstacle_2_aabb);
+    octree->InsertObject(octree->root, &player_aabb);
+    octree->InsertObject(octree->root, &obstacle_2_aabb);
+}
+
+void Octree_Build(WIP_Polygon::Octree*& _octree, std::vector<WIP_Polygon::AABB*>_aabbs) {
+    _octree = new WIP_Polygon::Octree(glm::vec3(0.0f), 5.0f, 3);
+
+    for (int i = 0; i < _aabbs.size(); i++) {
+        _octree->InsertObject(_octree->root, _aabbs[i]);
+    }
+}
+
+void Octree_TestAllCollisions(WIP_Polygon::Node* _pTree, std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
     const int MAX_DEPTH = 40;
     static WIP_Polygon::Node* ancestorStack[MAX_DEPTH];
     static int depth = 0;
@@ -290,14 +369,22 @@ void TestAllCollisions(WIP_Polygon::Node* _pTree) {
             for (pB = _pTree->pObjList; pB; pB = pB->pNextObject) {
                 if (pA == pB) break;//continue flips the testing order
                 if (pA->rigidbody->is_static && pB->rigidbody->is_static) { continue; }
-                if (!pB->rigidbody->is_static) { TestCollision(pB, pA); }
-                else { TestCollision(pA, pB); }                  
+                /*if (!pB->rigidbody->is_static) { 
+                    //TestCollision(pB, pA);
+                    _aabb_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(pB, pA));
+                }
+                else { 
+                   //TestCollision(pA, pB); 
+                   _aabb_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(pA, pB));
+                } */      
+                _aabb_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(pA, pB));
+
             }
         }
     }
     for (int i = 0; i < _pTree->pChild.size(); i++) {        
         if (_pTree->pChild[i]) {
-            TestAllCollisions(_pTree->pChild[i]);
+            Octree_TestAllCollisions(_pTree->pChild[i], _aabb_pairs);
         }
     }
     depth--;
@@ -435,7 +522,45 @@ void updateCameraTransform() {
     camera.UpdatePosition(playerObject.position);
 }
 
-unsigned int loadTexture(char const* path) {
+void loadTerrain(char const* path) {
+    unsigned int textureID;
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+    if (data) {
+        /*formula for accessing pixel(x, y) =
+        *   data + y * width + x * nrChannels
+        * formula for accessing pixel(x, y) of arbitrary sized grid_noise terrain texture
+        *   center = (width / num_cells_per_row) / 2
+        *   data + y * width + center * (2 * x + 1) * nrChannels
+        * 
+        * example for accessing single channel alpha value of pixel (cell, row)
+        *   int row = 3;
+            int cell = 6;
+            int x = center_x * (2 * cell + 1);
+            int y = width * center_y * (row * 2 + 1);
+            int alpha = int(*(data + y + x * 1));
+            std::cout << alpha << "\n";
+            std::cout << "x-> " << width << " y-> " << height << " channels-> " << nrChannels << "\n";
+
+        */
+        int center_x = (width / cell_size) / 2;
+        int center_y = (height / cell_size) / 2;
+        for (int z = 0; z < cell_size; z++) {
+            for (int x = 0; x < cell_size; x++) {
+                int i = center_x * (2 * x + 1);
+                int j = center_y * width * (2 * z + 1);
+                int alpha = int(*(data + z + x));
+                int k = glm::mix(0, cell_size, static_cast<float>(alpha / 255));
+                for (int y = 0; y < k; y++) {
+                    //terrain[x][y][z] = WIP_Polygon::Rigidbody{glm::vec3(1.0f), glm::vec3(0.0f)};
+                }
+            }
+        }
+    }
+    stbi_image_free(data);
+}
+
+/*unsigned int loadTexture(char const* path) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
     int width, height, nrChannels;
@@ -470,4 +595,4 @@ unsigned int loadTexture(char const* path) {
     stbi_image_free(data);
     return textureID;
 return 0;
-}
+}*/

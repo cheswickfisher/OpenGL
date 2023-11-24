@@ -5,17 +5,17 @@ namespace WIP_Polygon {
 		moveSpeed{ 1.0f }, moveDirection{ glm::vec3(0.0f) },
 		turnSpeed{ 1.0f }, Rigidbody{}
 	{}
-	CharacterControls::CharacterControls(glm::vec3 _scale, WIP_Polygon::Collider* _collider) :
-		Rigidbody{ _scale , _collider},
+	CharacterControls::CharacterControls(glm::vec3 _scale, float _mass, WIP_Polygon::Collider* _collider) :
+		Rigidbody{ _scale , _mass, _collider},
 		moveSpeed(1.0f), moveDirection(glm::vec3(0.0f)), turnSpeed(1.0f)
 	{}
-	CharacterControls::CharacterControls(glm::vec3 _scale, glm::vec3 _position, WIP_Polygon::Collider* _collider)
-		: Rigidbody{ _scale, _position, _collider },
+	CharacterControls::CharacterControls(glm::vec3 _scale, glm::vec3 _position, float _mass, WIP_Polygon::Collider* _collider)
+		: Rigidbody{ _scale, _position, _mass, _collider },
 		 moveSpeed(1.0f), moveDirection(glm::vec3(0.0f)), turnSpeed(1.0f)
 	{}
 
-	CharacterControls::CharacterControls(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, WIP_Polygon::Collider* _collider)
-		: Rigidbody{ _scale, _position, _rotation, _collider },
+	CharacterControls::CharacterControls(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, float _mass, WIP_Polygon::Collider* _collider)
+		: Rigidbody{ _scale, _position, _rotation, _mass, _collider },
 		moveSpeed(1.0f), moveDirection(glm::vec3(0.0f)), turnSpeed(1.0f)
 	{}
 	/*CharacterControls::CharacterControls() :

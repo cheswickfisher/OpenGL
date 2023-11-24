@@ -7,6 +7,7 @@
 #include "Shader.h"
 #include "RenderShapes.h"
 namespace WIP_Polygon {
+	class Shader;
 	class GameObject;
 	class MeshRenderer {
 	public:

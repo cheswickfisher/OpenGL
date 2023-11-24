@@ -53,26 +53,42 @@ namespace WIP_Polygon {
 	}
 	void Octree::RemoveObject(Node* _pTree, AABB* _pObject) {
 		if (_pTree->pObjList != nullptr) {
+			if (_pTree->pObjList == _pObject) {
+				_pTree->pObjList = _pObject->pNextObject;
+				return;
+			}
+			WIP_Polygon::AABB* pA{ nullptr };
+
+			for (pA = _pTree->pObjList; pA; pA = pA->pNextObject) {
+				if (_pTree->pObjList->pNextObject == _pObject) {
+					_pTree->pObjList->pNextObject = _pObject->pNextObject;
+					return;
+				}
+			}
+		}
+		for (int i = 0; i < _pTree->pChild.size(); i++) {
+			if (_pTree->pChild[i]) {
+				Octree::RemoveObject(_pTree->pChild[i], _pObject);
+			}
+		}
+		
+		/*if (_pTree->pObjList != nullptr) {
 
 			if (_pTree->pObjList == _pObject) {
-				//std::cout << "remove at head of list" << "\n";
 				_pTree->pObjList = _pObject->pNextObject;
 				return;
 			}
 			else if (_pTree->pObjList->pNextObject == _pObject) {
-				//std::cout << "remove as next obj in list" << "\n";
 				_pTree->pObjList->pNextObject = _pObject->pNextObject;
 				return;
 			}
 		}
 		for (int i = 0; i < _pTree->pChild.size(); i++) {
-			//std::cout << "size is "<< _pTree->pChild.size() << " go to iteration " << i << "\n";
 			if (!_pTree->pChild[i]) {
-				//std::cout << "null child [" << i << "]" << "\n";
 				continue;
 			}
 			Octree::RemoveObject(_pTree->pChild[i], _pObject);
-		}
+		}*/
 	}
 
 	void Octree::DrawOctree(Node* _octree, int _levels, int _current_level) {

@@ -10,11 +10,10 @@ namespace WIP_Polygon {
 		id{GenerateID()},
 		VBO{},
 		VAO{},
-		texture{_texture}
-	{
+		texture{_texture}	{
 		game_object->mesh_renderer = this;
 	}
-
+//must be called after OpenGL context has been created
 	void MeshRenderer::SetupMesh() {
 		if (game_object == nullptr || verts == nullptr || shader == nullptr || texture == nullptr) { 
 			assert("mesh nullptr error");

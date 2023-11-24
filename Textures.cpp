@@ -1,18 +1,32 @@
 #include "Textures.h"
-#include "glad\glad.h"
-#include "glfw3.h"
-//#include "stb_image.h"
-#include <iostream>
 namespace WIP_Polygon {
-	const char* Textures::sandstone_brick_diffuse = "C:/OPENGL/textures/sandstone_brick_wall_diffuse.png";
-	const char* Textures::pavement_diffuse = "C:/OPENGL/textures/pavement_diffuse.png";
-	const char* Textures::rock_cliff_albedo = "C:/OPENGL/textures/Rock_CliffLayered_albedo.png";
 
+    std::pair<unsigned int, const char*> Textures::sandstone_brick_diffuse = 
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/sandstone_brick_wall_diffuse.png");
+    std::pair<unsigned int, const char*> Textures::pavement_diffuse =
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/pavement_diffuse.png");
+    std::pair<unsigned int, const char*> Textures::rock_cliff_albedo =
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/Rock_CliffLayered_albedo.png");
+    std::pair<unsigned int, const char*> Textures::grid_cell_noise_0 =
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/test_texture_20231112171844.8591522.png");
+    std::pair<unsigned int, const char*> Textures::grid_cell_noise_1 =
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/test_texture_20231115205904.8954244.png");
+    std::vector < std::pair<unsigned int, const char*>*> Textures::textures = {
+        &sandstone_brick_diffuse,
+        &pavement_diffuse,
+        &rock_cliff_albedo,
+        &grid_cell_noise_0,
+        &grid_cell_noise_1
+    };
+    void Textures::loadTextures() {
+        for (int i = 0; i < Textures::textures.size(); i++) {
+            Textures::textures[i]->first = Textures::loadTexture(Textures::textures[i]->second);
+        }
+    }
 	unsigned int Textures::loadTexture(char const* _path) {
-        std::cout << _path << "\n";
         unsigned int textureID{};
         glGenTextures(1, &textureID);
-        /*int width, height, nrChannels;
+        int width, height, nrChannels;
         unsigned char* data = stbi_load(_path, &width, &height, &nrChannels, 0);
         if (data) {
             GLenum format;
@@ -41,7 +55,7 @@ namespace WIP_Polygon {
         else {
             std::cout << "FAILED TO LOAD TEXTURE" << '\n';
         }
-        stbi_image_free(data);*/
+        stbi_image_free(data);
         return textureID;
     }
 }

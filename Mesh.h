@@ -1,4 +1,4 @@
-#ifndef Mesh_H
+/*#ifndef Mesh_H
 
 #define Mesh_H
 
@@ -35,7 +35,7 @@ public:
 		setupMesh();
 	}
 
-	void Draw(Shader& shader) {
+	void Draw(WIP_Polygon::Shader& shader) {
 		unsigned int diffuseNr = 1;
 		unsigned int specularNr = 1;
 		for (unsigned int i = 0; i < textures.size(); i++)
@@ -89,3 +89,4 @@ private:
 
 
 #endif
+*/

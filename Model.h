@@ -1,4 +1,4 @@
-#ifndef  Model_H
+/*#ifndef  Model_H
 
 #define Model_H
 
@@ -17,7 +17,7 @@ public:
 		loadModel(path);
 	}
 
-	void Draw(Shader& shader) {
+	void Draw(WIP_Polygon::Shader& shader) {
 		for (unsigned int i = 0; i < meshes.size(); i++) {
 			meshes[i].Draw(shader);
 		}
@@ -180,3 +180,4 @@ private:
 
 
 #endif
+*/

@@ -15,7 +15,6 @@ namespace WIP_Polygon {
 		AABB* pNextObject;
 		Node* pCurrentNode;//for debugging so i can visualize node object is in
 		glm::vec3 center;
-		glm::vec3 test_center;
 		glm::vec3 radius;//use x component as radius for bounding sphere
 		int bucket;
 		int level;

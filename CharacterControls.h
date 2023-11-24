@@ -15,9 +15,9 @@ namespace WIP_Polygon {
 		glm::vec3 moveDirection;
 		float turnSpeed;
 		CharacterControls();
-		CharacterControls(glm::vec3 _scale, WIP_Polygon::Collider* _collider);
-		CharacterControls(glm::vec3 _scale, glm::vec3 _position, WIP_Polygon::Collider* _collider);
-		CharacterControls(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, WIP_Polygon::Collider* _collider);
+		CharacterControls(glm::vec3 _scale, float _mass, WIP_Polygon::Collider* _collider);
+		CharacterControls(glm::vec3 _scale, glm::vec3 _position, float _mass, WIP_Polygon::Collider* _collider);
+		CharacterControls(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, float _mass, WIP_Polygon::Collider* _collider);
 	};
 	/*class CharacterControls : public GameObject {
 	public:

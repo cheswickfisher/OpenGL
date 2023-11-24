@@ -6,7 +6,7 @@
 #include <glm\glm\gtc\matrix_transform.hpp>
 #include <glm/glm/gtc/quaternion.hpp>
 #include <glm/glm/gtx/quaternion.hpp>
-#include "Shader.h"
+#include "Shaders.h"
 #include "HalfEdge.h"
 #include "CollisionShape.h"
 #include "Collider.h"
@@ -29,7 +29,7 @@ namespace WIP_Polygon {
     public:
         std::unordered_map<int, DebugMesh> debug_meshes;
         Debug();
-        void Setup(Shader _shader);
+        void Setup();
         void AddMesh(WIP_Polygon::Collider* _collider);
         void UpdateTransforms(glm::mat4 view, glm::mat4 projection);
         void DrawDebugMeshes();

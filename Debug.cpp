@@ -16,7 +16,6 @@ namespace WIP_Polygon {
     unsigned int circleVAO{};
     unsigned int circleVBO{};
 
-    Shader debugShader{};
     float debug_line_verts[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     std::vector<float>debug_cube_verts = {   
         -0.5f, -0.5f, -0.5f,
@@ -66,8 +65,7 @@ namespace WIP_Polygon {
     Debug::Debug() :
         debug_meshes{}
     {}
-	void Debug::Setup(Shader _shader) {
-        debugShader = _shader;
+	void Debug::Setup() {
         //line
         glGenVertexArrays(1, &lineVAO);
         glGenBuffers(1, &lineVBO);
@@ -107,7 +105,6 @@ namespace WIP_Polygon {
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         debug_mesh.collider = _collider;
-        //debug_mesh.mesh = _mesh;
         debug_mesh.VAO = VAO;
         debug_mesh.VBO = VBO;
         debug_mesh.id = _mesh->id;
@@ -136,18 +133,18 @@ namespace WIP_Polygon {
         debug_meshes[_mesh->id] = debug_mesh;
     }
     void Debug::UpdateTransforms(glm::mat4 view, glm::mat4 projection) {
-        debugShader.use();
-        debugShader.setMat4("view", view);
-        debugShader.setMat4("projection", projection);
+        WIP_Polygon::Shaders::debugShader.use();
+        WIP_Polygon::Shaders::debugShader.setMat4("view", view);
+        WIP_Polygon::Shaders::debugShader.setMat4("projection", projection);
     }
     void Debug::DrawDebugLine(glm::vec3 start, glm::vec3 end, glm::vec4 color, float line_width) {
         float lineVertices[] = {
             start.x, start.y, start.z,
             end.x, end.y, end.z
         };
-        debugShader.use();
-        debugShader.setMat4("model", glm::mat4(1.0f));
-        debugShader.setVec4("color", color);
+        WIP_Polygon::Shaders::debugShader.use();
+        WIP_Polygon::Shaders::debugShader.setMat4("model", glm::mat4(1.0f));
+        WIP_Polygon::Shaders::debugShader.setVec4("color", color);
         glLineWidth(line_width);
         glBindVertexArray(lineVAO);
         glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
@@ -159,9 +156,9 @@ namespace WIP_Polygon {
     void Debug::DrawDebugCube(glm::vec3 position, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float line_width) {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position) * glm::toMat4(rotation) * glm::scale(model, scale);
-        debugShader.use();
-        debugShader.setMat4("model", model);
-        debugShader.setVec4("color", color);
+        WIP_Polygon::Shaders::debugShader.use();
+        WIP_Polygon::Shaders::debugShader.setMat4("model", model);
+        WIP_Polygon::Shaders::debugShader.setVec4("color", color);
         glLineWidth(line_width);
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_LINE_STRIP, 0, 24);
@@ -173,19 +170,19 @@ namespace WIP_Polygon {
         glm::quat rot_Y = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position) * glm::scale(model, radius * glm::vec3(1.0f));
-        debugShader.use();
-        debugShader.setMat4("model", model);
-        debugShader.setVec4("color", color);
+        WIP_Polygon::Shaders::debugShader.use();
+        WIP_Polygon::Shaders::debugShader.setMat4("model", model);
+        WIP_Polygon::Shaders::debugShader.setVec4("color", color);
         glLineWidth(line_width);
         glBindVertexArray(circleVAO);
         glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
         model = glm::mat4(1.0f);
         model = glm::translate(model, position) * glm::toMat4(rot_X) * glm::scale(model, radius * glm::vec3(1.0f));
-        debugShader.setMat4("model", model);
+        WIP_Polygon::Shaders::debugShader.setMat4("model", model);
         glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
         model = glm::mat4(1.0f);
         model = glm::translate(model, position) * glm::toMat4(rot_Y) * glm::scale(model, radius * glm::vec3(1.0f));
-        debugShader.setMat4("model", model);
+        WIP_Polygon::Shaders::debugShader.setMat4("model", model);
         glDrawArrays(GL_LINE_STRIP, 0, debug_circle_verts.size() * 0.5f);
         glBindVertexArray(0);
         glLineWidth(1.0f);
@@ -209,9 +206,9 @@ namespace WIP_Polygon {
     void Debug::DrawDebugMeshes() {
         std::unordered_map<int, DebugMesh>::iterator it;
         for (it = debug_meshes.begin(); it != debug_meshes.end(); it++) {
-            debugShader.use();
-            debugShader.setMat4("model", it->second.collider->m_localToWorld);
-            debugShader.setVec4("color", it->second.collider->color);
+            WIP_Polygon::Shaders::debugShader.use();
+            WIP_Polygon::Shaders::debugShader.setMat4("model", it->second.collider->m_localToWorld);
+            WIP_Polygon::Shaders::debugShader.setVec4("color", it->second.collider->color);
             glLineWidth(1.0f);
             glBindVertexArray(it->second.VAO);
             glDrawArrays(GL_LINE_STRIP, 0, it->second.verts.size()/3);

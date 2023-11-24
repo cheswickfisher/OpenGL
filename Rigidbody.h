@@ -13,10 +13,11 @@ namespace WIP_Polygon {
 	public:
 		WIP_Polygon::Collider* collider;
 		glm::vec3 moveDirection;
+		float mass;
 		Rigidbody();
-		Rigidbody(glm::vec3 _scale, WIP_Polygon::Collider* _col);
-		Rigidbody(glm::vec3 _scale, glm::vec3 _position, WIP_Polygon::Collider* _col);
-		Rigidbody(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, WIP_Polygon::Collider* _col);
+		Rigidbody(glm::vec3 _scale, float _mass, WIP_Polygon::Collider* _col);
+		Rigidbody(glm::vec3 _scale, glm::vec3 _position, float _mass, WIP_Polygon::Collider* _col);
+		Rigidbody(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, float _mass, WIP_Polygon::Collider* _col);
 		void UpdatePosition(glm::vec3 _position);
 	};
 }
