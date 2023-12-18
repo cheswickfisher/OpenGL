@@ -165,6 +165,7 @@ namespace WIP_Polygon {
         glBindVertexArray(0);
         glLineWidth(1.0f);
     }
+
     void Debug::DrawDebugSphere(glm::vec3 position, float radius, glm::vec4 color, float line_width) {
         glm::quat rot_X = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::quat rot_Y = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));

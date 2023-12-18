@@ -12,7 +12,8 @@ namespace WIP_Polygon {
 	AABB::AABB(Rigidbody* _rigidbody) :
 		pNextObject{ nullptr }, pCurrentNode{ nullptr }, rigidbody{ _rigidbody }
 	{
-		BoundingSphere(_rigidbody);
+		//BoundingSphere(_rigidbody);
+		_rigidbody->collider->aabb = this;
 	}
 	/*AABB::AABB() :
 		pNextObject{ nullptr }, center{ glm::vec3(0.0f) }, radius{ glm::vec3(1.0f) },
@@ -40,4 +41,44 @@ namespace WIP_Polygon {
 		center = _rigidbody->collider->center;
 		radius = glm::vec3(glm::sqrt(max_distance), 0.0f, 0.0f);
 	}
+	void AABB::ConstructFromPointSet(Collider* a) {
+		float x{};
+		float y{};
+		float z{};
+
+		glm::vec3 max_pt{};
+		glm::vec3 min_pt{};
+
+		glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+		glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		AABB::ExtremePointsAlongDirection(right, a->collider->vertices, a, &min_pt, &max_pt);
+		x = max_pt.x - min_pt.x;
+		AABB::ExtremePointsAlongDirection(up, a->collider->vertices, a, &min_pt, &max_pt);
+		y = max_pt.y - min_pt.y;
+		AABB::ExtremePointsAlongDirection(forward, a->collider->vertices, a, &min_pt, &max_pt);
+		z = max_pt.z - min_pt.z;
+
+		AABB::radius = glm::vec3(glm::abs(x) * 0.5f, glm::abs(y) * 0.5f, glm::abs(z) * 0.5f);
+		AABB::center = a->center;
+	}
+	void AABB::ExtremePointsAlongDirection(glm::vec3 dir, std::vector<Vertex> points, Collider* a, glm::vec3* min_pt, glm::vec3* max_pt) {
+		float minproj = std::numeric_limits<float>::max();
+		float maxproj = std::numeric_limits<float>::min();
+		for (int i = 0; i < points.size(); i++) {
+			//only need rotation and scale for transformation
+			glm::vec3 pos = glm::vec3(a->m_localToWorld * glm::vec4(points[i].position, 0.0f));
+			float proj = glm::dot(pos, dir);
+			if (proj < minproj) {
+				minproj = proj;
+				*min_pt = pos;
+			}
+			if (proj > maxproj) {
+				maxproj = proj;
+				*max_pt = pos;
+			}
+		}
+	}
+
 }

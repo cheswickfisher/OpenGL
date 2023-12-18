@@ -5,7 +5,7 @@
 namespace WIP_Polygon {
 	struct HalfEdge;
 	struct Vertex {
-		glm::vec3 position	;
+		glm::vec3 position;
 		HalfEdge* edge;
 		Vertex();
 		Vertex(glm::vec3 _position, HalfEdge* _edge);

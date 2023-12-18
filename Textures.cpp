@@ -11,12 +11,15 @@ namespace WIP_Polygon {
         std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/test_texture_20231112171844.8591522.png");
     std::pair<unsigned int, const char*> Textures::grid_cell_noise_1 =
         std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/test_texture_20231115205904.8954244.png");
+    std::pair<unsigned int, const char*> Textures::perlin_noise_0 =
+        std::pair<unsigned int, const char*>(0, "C:/OPENGL/textures/test_texture_20231201210558.2520170.png");
     std::vector < std::pair<unsigned int, const char*>*> Textures::textures = {
         &sandstone_brick_diffuse,
         &pavement_diffuse,
         &rock_cliff_albedo,
         &grid_cell_noise_0,
-        &grid_cell_noise_1
+        &grid_cell_noise_1,
+        &perlin_noise_0
     };
     void Textures::loadTextures() {
         for (int i = 0; i < Textures::textures.size(); i++) {
