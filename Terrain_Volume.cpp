@@ -77,9 +77,10 @@ namespace WIP_Polygon {
                     int k = glm::mix(0, num_cubes_xyz, static_cast<float>(alpha) / static_cast<float>(255));
                     for (int y = 0; y < k; y++) {
                         glm::vec3 world_pos = localToWorld * glm::vec4(current_pos, 1.0f);
-                        terrain[x][y][z] = WIP_Polygon::Rigidbody{ glm::vec3(cube_scale_factor), world_pos, std::numeric_limits<float>::infinity(), new BoxCollider(glm::vec3(cube_scale_factor), world_pos, glm::vec3(0.0f, 0.0f, 0.0f)) };
-                        terrain[x][y][z].mesh_renderer = new WIP_Polygon::MeshRenderer(&WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::sandstone_brick_diffuse.first, &terrain[x][y][z]);
-                        terrain[x][y][z].mesh_renderer->SetupMesh();
+                        //TODO: delete pointers when finished to avoid memory leaks
+                        terrain[x][y][z] = new WIP_Polygon::Rigidbody{ glm::vec3(cube_scale_factor), world_pos, std::numeric_limits<float>::infinity(), new BoxCollider(glm::vec3(cube_scale_factor), world_pos, glm::vec3(0.0f, 0.0f, 0.0f)) };
+                        terrain[x][y][z]->mesh_renderer = new WIP_Polygon::MeshRenderer(&WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::sandstone_brick_diffuse.first, terrain[x][y][z]);
+                        terrain[x][y][z]->mesh_renderer->SetupMesh();
                         current_pos = glm::vec3(current_pos.x, current_pos.y + increment.y, current_pos.z);
                     }
                     current_pos = glm::vec3(current_pos.x + increment.x, start_pos.y, current_pos.z);
@@ -98,12 +99,11 @@ namespace WIP_Polygon {
         for (int z = 0; z < num_cubes_xyz; z++) {
             for (int x = 0; x < num_cubes_xyz; x++) {
                 for (int y = 0; y < num_cubes_xyz; y++) {
-                    if (terrain[x][y][z].mesh_renderer == nullptr) {
-                        //std::cout << "mesh null_ptr" << "\n";
+                    if (terrain[x][y][z] == nullptr || terrain[x][y][z]->mesh_renderer == nullptr) {
                         continue;
                     }
                     else {
-                        terrain[x][y][z].mesh_renderer->DrawMesh();
+                        terrain[x][y][z]->mesh_renderer->DrawMesh();
                     }
                 }
             }
@@ -126,7 +126,7 @@ namespace WIP_Polygon {
         }
     }
     void TerrainVolume::insertObject(AABB* _pObject, int& x, int& y, int& z) {
-        glm::vec3 local_pos = _pObject->center - position;
+        /*glm::vec3 local_pos = _pObject->center - position;
         glm::vec3 grid_pos = TerrainVolume::GetClosestGridCellCenterPosition(local_pos, x, y, z);
         glm::vec3 cell_local_pos = local_pos - grid_pos;
         int x_size = _pObject->radius.x - (cube_scale_factor - glm::abs(cell_local_pos.x)) + 1;
@@ -135,9 +135,9 @@ namespace WIP_Polygon {
         int min_corner_x = glm::clamp(x - x_size, 0, num_cubes_xyz - 1);
         int min_corner_y = glm::clamp(y - y_size, 0, num_cubes_xyz - 1);
         int min_corner_z = glm::clamp(z - z_size, 0, num_cubes_xyz - 1);
-
-
-        Debug::DrawDebugCube(grid_pos + position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(cube_scale_factor), Colors::Red, 10.0f);
+        Debug::DrawDebugCube(grid_pos + position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(cube_scale_factor), Colors::Red, 10.0f);*/
+        glm::vec3 local_pos = glm::inverse(localToWorld) * glm::vec4(_pObject->center, 1.0f);
+        //TODO linked list for each grid cell
     }
     void TerrainVolume::removeObject() {
     
@@ -153,4 +153,35 @@ namespace WIP_Polygon {
         );
         return grid_pos;
     }
+    void TerrainVolume::GetTerrainIndices(glm::vec3 local_pos, int& x, int& y, int& z) {
+        glm::vec3 cell_size = 1.0f / glm::vec3(static_cast<float>(num_cubes_xyz));
+        glm::vec3 grid_pos = (local_pos + 0.5f) / cell_size;
+        x = glm::clamp(grid_pos.x, 0.0f, static_cast<float>(num_cubes_xyz));
+        y = glm::clamp(grid_pos.y, 0.0f, static_cast<float>(num_cubes_xyz));
+        z = glm::clamp(grid_pos.z, 0.0f, static_cast<float>(num_cubes_xyz));
+    }
+    std::vector<Rigidbody*> TerrainVolume::GetCollisionCells(AABB* a) {
+        int min_index_x{};
+        int max_index_x{};
+        int min_index_y{};
+        int max_index_y{};
+        int min_index_z{};
+        int max_index_z{};
+        glm::vec3 min_corner = glm::inverse(localToWorld) * glm::vec4(a->center - a->radius, 1.0f);
+        glm::vec3 max_corner = glm::inverse(localToWorld) * glm::vec4(a->center + a->radius, 1.0f);
+        TerrainVolume::GetTerrainIndices(min_corner, min_index_x, min_index_y, min_index_z);
+        TerrainVolume::GetTerrainIndices(max_corner, max_index_x, max_index_y, max_index_z);
+        std::vector<Rigidbody*>rbs_to_check{};
+        for (int z = min_index_z; z <= max_index_z; z++) {
+            for (int x = min_index_x; x <= max_index_x; x++) {
+                for (int y = min_index_y; y <= max_index_y; y++) {
+                    if (TerrainVolume::terrain[x][y][z] != nullptr) {
+                        rbs_to_check.push_back(TerrainVolume::terrain[x][y][z]);
+                    }
+                }
+            }
+        }
+        return rbs_to_check;
+    }
+
 }

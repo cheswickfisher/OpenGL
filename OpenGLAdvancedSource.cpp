@@ -34,6 +34,8 @@
 #include <string>
 #include <utility>
 
+#define IDENTITY_QUAT glm::quat(1.0f,0.0f,0.0f,0.0f)
+
 void Update_Dynamic_Colliders();
 void Octree_Update();
 void Octree_Build(WIP_Polygon::Octree*& _octree, std::vector<WIP_Polygon::AABB*>_aabbs);
@@ -212,7 +214,6 @@ void update() {
 
 void updatePhysics() {
     Update_Dynamic_Colliders();
-
     //terrain_volume.insertObject(playerObject.collider->aabb);
     /*Octree_Update();
     std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>> aabb_pairs{};
@@ -239,6 +240,11 @@ void render() {
     WIP_Polygon::Debug::DrawDebugCube(playerObject.collider->aabb->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), playerObject.collider->aabb->radius * 2.0f, Colors::Cyan, 1.0f);
     glm::vec3 min_corner = playerObject.collider->aabb->center - playerObject.collider->aabb->radius;
     WIP_Polygon::Debug::DrawDebugCube(min_corner, glm::quat(1.0f,0.0f,0.0f,0.0f), glm::vec3(0.1f), Colors::Red, 1.0f);
+    std::vector<WIP_Polygon::Rigidbody*> collision_rbs = terrain_volume.GetCollisionCells(playerObject.collider->aabb);
+
+    for (int i = 0; i < collision_rbs.size(); i++) {
+        WIP_Polygon::Debug::DrawDebugCube(collision_rbs[i]->collider->center, IDENTITY_QUAT, collision_rbs[i]->collider->scale, Colors::Red, 10.0f);
+    }
     /*WIP_Polygon::Debug::DrawDebugSphere(obstacle_2_aabb.center, obstacle_2_aabb.radius.x, Colors::Red, 2.0f);
     WIP_Polygon::Debug::DrawDebugSphere(obstacle_aabb.center, obstacle_aabb.radius.x, Colors::Red, 2.0f);
     WIP_Polygon::Debug::DrawDebugSphere(player_aabb.center, player_aabb.radius.x, Colors::Purple, 2.0f);
@@ -257,7 +263,7 @@ void render() {
         mesh_renderers[i]->DrawMesh();
     }    
 
-    //terrain_volume.renderTerrain();
+    terrain_volume.renderTerrain();
 
     glfwSwapBuffers(window);
     glfwPollEvents();

@@ -23,7 +23,7 @@ namespace WIP_Polygon {
 		float cube_scale_factor;
 		float terrain_scale_factor;
 		glm::mat4 localToWorld;
-		WIP_Polygon::Rigidbody terrain [num_cubes_xyz][num_cubes_xyz][num_cubes_xyz];
+		WIP_Polygon::Rigidbody* terrain [num_cubes_xyz][num_cubes_xyz][num_cubes_xyz];
 		TerrainVolume();
 		TerrainVolume(glm::vec3 _position, float _cube_scale_factor);
 		void loadTerrain(char const* path);
@@ -32,7 +32,9 @@ namespace WIP_Polygon {
 		void renderGrid();
 		void insertObject(AABB* _pObject, int& x, int& y, int& z);
 		void removeObject();
-		glm::vec3 GetClosestGridCellCenterPosition(glm::vec3 worldPos, int& x, int& y, int& z);
+		glm::vec3 GetClosestGridCellCenterPosition(glm::vec3 local_pos, int& x, int& y, int& z);
+		void GetTerrainIndices(glm::vec3 local_pos, int& x, int& y, int& z);
+		std::vector<Rigidbody*> GetCollisionCells(AABB* a);
 	};
 }
 #endif
