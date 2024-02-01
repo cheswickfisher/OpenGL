@@ -11,6 +11,7 @@ namespace WIP_Polygon {
 		AABB* pObjList;
 		int level;//for debugging
 		Node();
+		Node(glm::vec3 _center, float _halfWidth);
 	};
 }
 #endif

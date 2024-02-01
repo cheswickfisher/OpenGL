@@ -78,9 +78,17 @@ namespace WIP_Polygon {
                     for (int y = 0; y < k; y++) {
                         glm::vec3 world_pos = localToWorld * glm::vec4(current_pos, 1.0f);
                         //TODO: delete pointers when finished to avoid memory leaks
-                        terrain[x][y][z] = new WIP_Polygon::Rigidbody{ glm::vec3(cube_scale_factor), world_pos, std::numeric_limits<float>::infinity(), new BoxCollider(glm::vec3(cube_scale_factor), world_pos, glm::vec3(0.0f, 0.0f, 0.0f)) };
+                        terrain[x][y][z] = new WIP_Polygon::Node{ world_pos, cube_scale_factor * 0.5f };
+                        WIP_Polygon::Rigidbody* rb = new WIP_Polygon::Rigidbody{ glm::vec3(cube_scale_factor), world_pos, std::numeric_limits<float>::infinity(), new BoxCollider(glm::vec3(cube_scale_factor), world_pos, glm::vec3(0.0f, 0.0f, 0.0f)) };
+                        rb->mesh_renderer = new WIP_Polygon::MeshRenderer(&WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::sandstone_brick_diffuse.first, rb);
+                        rb->mesh_renderer->SetupMesh();
+                        WIP_Polygon::AABB* aabb = new WIP_Polygon::AABB{ glm::vec3(cube_scale_factor * 0.5f), world_pos, rb};
+                        aabb->name = "aabb-" + std::to_string(x) + "-" + std::to_string(y) + "-" + std::to_string(z);
+                        aabb->pNextObject = terrain[x][y][z]->pObjList;
+                        terrain[x][y][z]->pObjList = aabb;                        
+                        /*terrain[x][y][z] = new WIP_Polygon::Rigidbody{ glm::vec3(cube_scale_factor), world_pos, std::numeric_limits<float>::infinity(), new BoxCollider(glm::vec3(cube_scale_factor), world_pos, glm::vec3(0.0f, 0.0f, 0.0f)) };
                         terrain[x][y][z]->mesh_renderer = new WIP_Polygon::MeshRenderer(&WIP_Polygon::RenderShapes::cube, &WIP_Polygon::Shaders::lightingShader, &WIP_Polygon::Textures::sandstone_brick_diffuse.first, terrain[x][y][z]);
-                        terrain[x][y][z]->mesh_renderer->SetupMesh();
+                        terrain[x][y][z]->mesh_renderer->SetupMesh();*/
                         current_pos = glm::vec3(current_pos.x, current_pos.y + increment.y, current_pos.z);
                     }
                     current_pos = glm::vec3(current_pos.x + increment.x, start_pos.y, current_pos.z);
@@ -99,11 +107,20 @@ namespace WIP_Polygon {
         for (int z = 0; z < num_cubes_xyz; z++) {
             for (int x = 0; x < num_cubes_xyz; x++) {
                 for (int y = 0; y < num_cubes_xyz; y++) {
-                    if (terrain[x][y][z] == nullptr || terrain[x][y][z]->mesh_renderer == nullptr) {
+                    //gonna have to go through each object in every cell
+                    if (terrain[x][y][z] == nullptr /*|| terrain[x][y][z]->mesh_renderer == nullptr*/) {
                         continue;
                     }
                     else {
-                        terrain[x][y][z]->mesh_renderer->DrawMesh();
+                        //terrain[x][y][z]->mesh_renderer->DrawMesh();
+                        for (AABB* a = terrain[x][y][z]->pObjList; a; a = a->pNextObject) {
+                            if (a->rigidbody->mesh_renderer == nullptr) {
+                                continue;
+                            }
+                            else {
+                                a->rigidbody->mesh_renderer->DrawMesh();
+                            }
+                        }
                     }
                 }
             }
@@ -125,7 +142,8 @@ namespace WIP_Polygon {
             current_pos = glm::vec3(start_pos.x, start_pos.y, current_pos.z + offset.z);
         }
     }
-    void TerrainVolume::insertObject(AABB* _pObject, int& x, int& y, int& z) {
+    //part of the insertion step may need to be removal from previous cell
+    void TerrainVolume::insertObject(AABB* _pObject) {
         /*glm::vec3 local_pos = _pObject->center - position;
         glm::vec3 grid_pos = TerrainVolume::GetClosestGridCellCenterPosition(local_pos, x, y, z);
         glm::vec3 cell_local_pos = local_pos - grid_pos;
@@ -136,11 +154,48 @@ namespace WIP_Polygon {
         int min_corner_y = glm::clamp(y - y_size, 0, num_cubes_xyz - 1);
         int min_corner_z = glm::clamp(z - z_size, 0, num_cubes_xyz - 1);
         Debug::DrawDebugCube(grid_pos + position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(cube_scale_factor), Colors::Red, 10.0f);*/
-        glm::vec3 local_pos = glm::inverse(localToWorld) * glm::vec4(_pObject->center, 1.0f);
-        //TODO linked list for each grid cell
+        glm::vec3 local_pos = glm::inverse(localToWorld) * glm::vec4(_pObject->MinCorner(), 1.0f);
+        int x{};
+        int y{};
+        int z{};
+        GetTerrainIndices(local_pos, x, y, z);
+        if (terrain[x][y][z] != nullptr) {           
+            _pObject->pNextObject = terrain[x][y][z]->pObjList;
+            terrain[x][y][z]->pObjList = _pObject;
+        }
+        else {
+            //if the node is blank, create new node. node position will need to be gotten via GetGridCellCenterPositionFromTerrainIndices
+            glm::vec3 pos = TerrainVolume::GetGridCellCenterPositionFromTerrainIndices(x, y, z);
+            terrain[x][y][z] = new WIP_Polygon::Node{ pos, cube_scale_factor * 0.5f};
+            terrain[x][y][z]->pObjList = _pObject;
+        }
+        _pObject->pCurrentNode = terrain[x][y][z];
     }
-    void TerrainVolume::removeObject() {
-    
+    void TerrainVolume::removeObject(AABB* _pObject) {
+        int x{};
+        int y{};
+        int z{};
+        glm::vec3 local_pos = glm::inverse(localToWorld) * glm::vec4(_pObject->MinCorner(), 1.0f);
+        TerrainVolume::GetTerrainIndices(local_pos, x, y, z);
+        if (terrain[x][y][z] == nullptr) { return; }
+        AABB* p = terrain[x][y][z]->pObjList; 
+        
+        if (p == _pObject) {
+            terrain[x][y][z]->pObjList = p->pNextObject;
+            p->pNextObject = nullptr;
+            if (terrain[x][y][z]->pObjList == nullptr) { terrain[x][y][z] = nullptr; }
+            return;
+        }
+        while (p) {
+            std::cout << "2" << "\n";
+            AABB* q = p;
+            p = p->pNextObject;
+            if (p == _pObject) {
+                q->pNextObject = p->pNextObject;
+                if (terrain[x][y][z]->pObjList == nullptr) { terrain[x][y][z] = nullptr; }
+                return;
+            }
+        }
     }
     glm::vec3 TerrainVolume::GetClosestGridCellCenterPosition(glm::vec3 local_pos, int& x, int& y, int& z) {
         x = glm::clamp(local_pos.x, -terrain_scale_factor * 0.5f, terrain_scale_factor * 0.5f) + terrain_scale_factor * 0.5f;
@@ -153,14 +208,21 @@ namespace WIP_Polygon {
         );
         return grid_pos;
     }
+
     void TerrainVolume::GetTerrainIndices(glm::vec3 local_pos, int& x, int& y, int& z) {
         glm::vec3 cell_size = 1.0f / glm::vec3(static_cast<float>(num_cubes_xyz));
         glm::vec3 grid_pos = (local_pos + 0.5f) / cell_size;
-        x = glm::clamp(grid_pos.x, 0.0f, static_cast<float>(num_cubes_xyz));
-        y = glm::clamp(grid_pos.y, 0.0f, static_cast<float>(num_cubes_xyz));
-        z = glm::clamp(grid_pos.z, 0.0f, static_cast<float>(num_cubes_xyz));
+        x = glm::clamp(grid_pos.x, 0.0f, static_cast<float>(num_cubes_xyz - 1));
+        y = glm::clamp(grid_pos.y, 0.0f, static_cast<float>(num_cubes_xyz - 1));
+        z = glm::clamp(grid_pos.z, 0.0f, static_cast<float>(num_cubes_xyz - 1));
     }
-    std::vector<Rigidbody*> TerrainVolume::GetCollisionCells(AABB* a) {
+    glm::vec3 TerrainVolume::GetGridCellCenterPositionFromTerrainIndices(int x, int y, int z) {
+        float x_pos = -0.5f + (2.0f * x + 1.0f) / (2.0f * num_cubes_xyz);
+        float y_pos = -0.5f + (2.0f * y + 1.0f) / (2.0f * num_cubes_xyz);
+        float z_pos = -0.5f + (2.0f * z + 1.0f) / (2.0f * num_cubes_xyz);
+        return localToWorld * glm::vec4(x_pos, y_pos, z_pos, 1.0f);
+    }
+    std::vector<Rigidbody*> TerrainVolume::GetCollisionCells(AABB* a, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) {
         int min_index_x{};
         int max_index_x{};
         int min_index_y{};
@@ -172,11 +234,18 @@ namespace WIP_Polygon {
         TerrainVolume::GetTerrainIndices(min_corner, min_index_x, min_index_y, min_index_z);
         TerrainVolume::GetTerrainIndices(max_corner, max_index_x, max_index_y, max_index_z);
         std::vector<Rigidbody*>rbs_to_check{};
+        collision_pairs.clear();//this won't delete the pointers, only clears the storage
+        //std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>> collision_pairs{};
         for (int z = min_index_z; z <= max_index_z; z++) {
             for (int x = min_index_x; x <= max_index_x; x++) {
                 for (int y = min_index_y; y <= max_index_y; y++) {
                     if (TerrainVolume::terrain[x][y][z] != nullptr) {
-                        rbs_to_check.push_back(TerrainVolume::terrain[x][y][z]);
+                        //rbs_to_check.push_back(TerrainVolume::terrain[x][y][z]);
+                        for (AABB* aabb = terrain[x][y][z]->pObjList; aabb; aabb = aabb->pNextObject) {
+                            if (aabb == a) { continue; }
+                            rbs_to_check.push_back(aabb->rigidbody);
+                            collision_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(a, aabb));
+                        }
                     }
                 }
             }

@@ -9,10 +9,16 @@ namespace WIP_Polygon {
 		pNextObject{ nullptr }, pCurrentNode{ nullptr }, center{ _center }, radius{ _radius },
 		bucket{ 0 }, level{ 0 }, rigidbody{ nullptr }
 	{}
+	AABB::AABB(glm::vec3 _radius, glm::vec3 _center, Rigidbody* _rigidbody) :
+		pNextObject{ nullptr }, pCurrentNode{ nullptr }, center{ _center }, radius{ _radius },
+		bucket{ 0 }, level{ 0 }, rigidbody{ _rigidbody }
+	{}
 	AABB::AABB(Rigidbody* _rigidbody) :
-		pNextObject{ nullptr }, pCurrentNode{ nullptr }, rigidbody{ _rigidbody }
+		pNextObject{ nullptr }, pCurrentNode{ nullptr }, center{ _rigidbody->position }, radius{_rigidbody->scale * 0.5f},  
+		bucket{ 0 }, level{ 0 }, rigidbody{ _rigidbody }
 	{
 		//BoundingSphere(_rigidbody);
+		ConstructFromPointSet(_rigidbody->collider);
 		_rigidbody->collider->aabb = this;
 	}
 	/*AABB::AABB() :
@@ -79,6 +85,10 @@ namespace WIP_Polygon {
 				*max_pt = pos;
 			}
 		}
+	}
+
+	glm::vec3 AABB::MinCorner() {
+		return center - radius;
 	}
 
 }

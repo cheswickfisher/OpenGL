@@ -5,4 +5,9 @@ namespace WIP_Polygon {
 	{
 		pChild.resize(8);
 	}
+	Node::Node(glm::vec3 _center, float _halfWidth):
+		center{ _center}, halfWidth{_halfWidth}, pObjList{nullptr}, level{0}
+	{
+		pChild.resize(8);
+	}
 }
