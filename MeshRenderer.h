@@ -18,6 +18,7 @@ namespace WIP_Polygon {
 		unsigned int VBO;
 		unsigned int VAO;
 		unsigned int* texture;
+		MeshRenderer();
 		MeshRenderer(std::vector<float>* _verts, Shader* _shader, unsigned int* _texture, GameObject* _game_object);
 		void SetupMesh();
 		void DrawMesh();

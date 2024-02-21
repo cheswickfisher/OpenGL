@@ -1,6 +1,7 @@
 #ifndef  GAMEOBJECT_H
 #define GAMEOBJECT_H
 #include "MeshRenderer.h"
+#include "Preferences.h"
 #include <glm\glm\glm.hpp>
 #include <glm\glm\gtc\matrix_transform.hpp>
 #include <glm\glm\gtc\type_ptr.hpp>

@@ -3,6 +3,7 @@
 #include <glm\glm\glm.hpp>
 
 namespace WIP_Polygon {
+	MeshRenderer::MeshRenderer(){}
 	MeshRenderer::MeshRenderer(std::vector<float>* _verts, Shader* _shader, unsigned int* _texture, GameObject* _game_object) :
 		game_object{ _game_object},
 		verts{ _verts },

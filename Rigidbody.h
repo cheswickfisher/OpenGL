@@ -12,13 +12,16 @@ namespace WIP_Polygon {
 	class Rigidbody : public GameObject {
 	public:
 		WIP_Polygon::Collider* collider;
-		glm::vec3 moveDirection;
+		glm::vec3 moveDirection; //not using this for anything important
+		glm::vec3 velocity;
+		glm::vec3 acceleration;
 		float mass;
 		Rigidbody();
 		Rigidbody(glm::vec3 _scale, float _mass, WIP_Polygon::Collider* _col);
 		Rigidbody(glm::vec3 _scale, glm::vec3 _position, float _mass, WIP_Polygon::Collider* _col);
 		Rigidbody(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, float _mass, WIP_Polygon::Collider* _col);
 		void UpdatePosition(glm::vec3 _position);
+		void AddForce(float force, glm::vec3 direction);
 	};
 }
 #endif
