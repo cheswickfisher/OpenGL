@@ -7,15 +7,15 @@ namespace WIP_Polygon {
 		aabbs{nullptr}, gameobjects{ nullptr }, mesh_renderers{ nullptr },
 		//terrain_volume{ nullptr },
 		collision_pairs{ nullptr },
-		octree{ nullptr },
+		//octree{ nullptr },
 		grid {nullptr}
 	{}
 	Scene::Scene(Camera* _camera, std::vector<WIP_Polygon::AABB*>* _aabbs, std::vector<WIP_Polygon::GameObject*>* _gameobjects,
 		std::vector<WIP_Polygon::MeshRenderer*>* _mesh_renderers, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>* _collision_pairs,
-		WIP_Polygon::TerrainVolume* _terrain_volume, WIP_Polygon::Octree* _octree, WIP_Polygon::Grid* _grid) :
+		/*WIP_Polygon::TerrainVolume* _terrain_volume, WIP_Polygon::Octree* _octree,*/ WIP_Polygon::Grid* _grid) :
 		camera{_camera}, debug{ new WIP_Polygon::Debug() },
 		aabbs{_aabbs}, gameobjects{_gameobjects}, mesh_renderers{_mesh_renderers},
-		collision_pairs{_collision_pairs}, /*terrain_volume{_terrain_volume},*/ octree{_octree}, grid{_grid}
+		collision_pairs{_collision_pairs}, /*terrain_volume{_terrain_volume}, octree{_octree},*/ grid{_grid}
 	{
 	}
 
@@ -35,6 +35,19 @@ namespace WIP_Polygon {
 			mesh_renderers->at(i)->game_object->UpdateTransform();
 			mesh_renderers->at(i)->DrawMesh();
 		}
+	}
+
+	void Scene::UpdateAABBS() {
+		for (int i = 0; i < aabbs->size(); i++) {
+			if (!aabbs->at(i)->rigidbody->is_static) {
+				aabbs->at(i)->rigidbody->UpdateTransform();
+				aabbs->at(i)->rigidbody->collider->UpdateTransform(aabbs->at(i)->rigidbody->position, aabbs->at(i)->rigidbody->rotation, aabbs->at(i)->rigidbody->collider->scale);
+				aabbs->at(i)->center = aabbs->at(i)->rigidbody->position;
+				aabbs->at(i)->ConstructFromPointSet(aabbs->at(i)->rigidbody->collider);
+				grid->InsertObject(aabbs->at(i));
+			}
+		}
+
 	}
 
 	Scene::~Scene() {}

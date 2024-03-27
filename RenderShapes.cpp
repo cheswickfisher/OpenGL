@@ -45,13 +45,14 @@ namespace WIP_Polygon {
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
     std::vector<float> RenderShapes::plane{
-        0.5f,  0.5f,  0.0f, 2.0f, 2.0f,
-       -0.5f,  0.5f,  0.0f, 0.0f, 2.0f,
-        0.5f, -0.5f,  0.0f, 2.0f, 0.0f,
+                             //scale down the texture 2x
+        0.5f,  0.5f,  0.0f,  2.0f, 2.0f,
+       -0.5f,  0.5f,  0.0f,  0.0f, 2.0f,
+        0.5f, -0.5f,  0.0f,  2.0f, 0.0f,
 
-        0.5f, -0.5f,  0.0f, 2.0f, 0.0f,
-       -0.5f,  0.5f,  0.0f, 0.0f, 2.0f,
-       -0.5f, -0.5f,  0.0f, 0.0f, 0.0f,
+        0.5f, -0.5f,  0.0f,  2.0f, 0.0f,
+       -0.5f,  0.5f,  0.0f,  0.0f, 2.0f,
+       -0.5f, -0.5f,  0.0f,  0.0f, 0.0f,
     };
     std::vector<float> RenderShapes::circle{ RenderShapes::CreateCircle(90) };
     std::vector<float> RenderShapes::CreateCircle(int _num_verts) {

@@ -26,7 +26,6 @@ namespace WIP_Polygon {
 		void LoadScene() override;
 		void DrawScene() override;
 		void HandleInput(GLFWwindow* window) override;
-		void UpdateCamera() override;
 	};
 }
 

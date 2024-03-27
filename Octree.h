@@ -21,13 +21,15 @@ namespace WIP_Polygon {
 		Node* BuildOctree(glm::vec3 _center, float _halfWidth, int _stopDepth);
 		void InsertObject(Node* _pTree, AABB* _pObject);
 		void RemoveObject(Node* _pTree, AABB* _pObject);
+		void GetCollisionPairs(Node* _pTree, std::vector<std::pair <AABB*, AABB*>>& _aabb_pairs);
 		void RenderOctreeMeshes(Node* _pTree);
+		void DebugGrid(Node* _pTree);
 
 		void BuildGrid() override;
 		void RenderGridMeshes() override;
 		void InsertObject(AABB* _pObject) override;
 		void RemoveObject(AABB* _pObject) override;
-		void GetCollisionPairs(AABB* a, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) override;
+		void GetCollisionPairs(std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) override;
 		void RenderGridLines() override;
 
 

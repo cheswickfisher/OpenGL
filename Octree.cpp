@@ -58,10 +58,13 @@ namespace WIP_Polygon {
 				return;
 			}
 			WIP_Polygon::AABB* pA{ nullptr };
-
 			for (pA = _pTree->pObjList; pA; pA = pA->pNextObject) {
-				if (_pTree->pObjList->pNextObject == _pObject) {
+				/*if (_pTree->pObjList->pNextObject == _pObject) {
 					_pTree->pObjList->pNextObject = _pObject->pNextObject;
+					return;
+				}*/
+				if (pA->pNextObject == _pObject) {
+					pA->pNextObject = _pObject->pNextObject;
 					return;
 				}
 			}
@@ -91,6 +94,30 @@ namespace WIP_Polygon {
 		}*/
 	}
 
+	void Octree::GetCollisionPairs(Node* _pTree, std::vector<std::pair <AABB*, AABB*>>& collision_pairs) {
+		const int MAX_DEPTH = 40;
+		static WIP_Polygon::Node* ancestorStack[MAX_DEPTH];
+		static int depth = 0;
+		ancestorStack[depth++] = _pTree;
+		for (int n = 0; n < depth; n++) {
+			WIP_Polygon::AABB* pA{ nullptr };
+			WIP_Polygon::AABB* pB{ nullptr };
+			for (pA = ancestorStack[n]->pObjList; pA; pA = pA->pNextObject) {
+				for (pB = _pTree->pObjList; pB; pB = pB->pNextObject) {
+					if (pA == pB) break;//continue flips the testing order
+					if (pA->rigidbody->is_static && pB->rigidbody->is_static) { continue; }
+					collision_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(pA, pB));
+				}
+			}
+		}
+		for (int i = 0; i < _pTree->pChild.size(); i++) {
+			if (_pTree->pChild[i]) {
+				GetCollisionPairs(_pTree->pChild[i], collision_pairs);
+			}
+		}
+		depth--;
+	}
+
 	void Octree::DrawOctreeGridLines(Node* _octree, int _levels, int _current_level) {
 		if (_octree == nullptr) { return; }
 		//Debug::DrawDebugCube(_octree->center, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(_octree->halfWidth * 2.0f - static_cast<float>(_current_level * 0.005f)), color_index[_current_level % color_index.size()], glm::mix(0.01f, 5.0f, static_cast<float>(_levels - _current_level) / static_cast<float>(_levels)));
@@ -116,6 +143,23 @@ namespace WIP_Polygon {
 				Octree::RenderOctreeMeshes(_pTree->pChild[i]);
 			}
 		}
+	}
+
+	void Octree::DebugGrid(Node* _pTree) {
+		if (_pTree->pObjList != nullptr) {
+			WIP_Polygon::AABB* pA{ nullptr };
+
+			for (pA = _pTree->pObjList; pA; pA = pA->pNextObject) {
+				if (pA->rigidbody!= nullptr) {
+					std::cout << pA->rigidbody->name << " detected at level [" << _pTree->level << "]" << "\n";
+				}
+			}
+		}
+		for (int i = 0; i < _pTree->pChild.size(); i++) {
+			if (_pTree->pChild[i]) {
+				Octree::DebugGrid(_pTree->pChild[i]);
+			}
+		}
 
 	}
 
@@ -127,12 +171,18 @@ namespace WIP_Polygon {
 		RenderOctreeMeshes(root);
 	}
 	void Octree::InsertObject(AABB* _pObject) {
+		RemoveObject(_pObject);
 		InsertObject(root, _pObject);
 	}
 	void Octree::RemoveObject(AABB* _pObject) {
 		RemoveObject(root, _pObject);
 	}
-	void Octree::GetCollisionPairs(AABB* a, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) {}
+	
+	void Octree::GetCollisionPairs(std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) {
+		collision_pairs.clear();
+		GetCollisionPairs(root, collision_pairs);
+	}
+
 	void Octree::RenderGridLines() {
 		DrawOctreeGridLines(root, levels, 0);
 	}

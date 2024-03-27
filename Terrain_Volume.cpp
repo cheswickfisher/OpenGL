@@ -6,8 +6,8 @@ namespace WIP_Polygon {
     TerrainVolume::TerrainVolume(glm::vec3 _position, float _cube_scale_factor) :
         position{ _position }, terrain_scale_factor{ num_cubes_xyz * _cube_scale_factor }, cube_scale_factor{ _cube_scale_factor }, localToWorld {
             glm::translate(glm::mat4(1.0f), _position)*
-            glm::scale(glm::mat4(1.0f), glm::vec3(static_cast<float>(terrain_scale_factor)))
-        }
+            glm::scale(glm::mat4(1.0f), glm::vec3(static_cast<float>(terrain_scale_factor))),
+        }, terrain{}
     {}
     void TerrainVolume::loadTerrain(char const* path) {
         unsigned int textureID;
@@ -335,7 +335,7 @@ namespace WIP_Polygon {
             for (int x = 0; x < num_cubes_xyz; x++) {
                 for (int y = 0; y < num_cubes_xyz; y++) {
                     //gonna have to go through each object in every cell
-                    if (terrain[x][y][z] == nullptr /*|| terrain[x][y][z]->mesh_renderer == nullptr*/) {
+                    if (terrain[x][y][z] == nullptr ) {
                         continue;
                     }
                     else {
@@ -418,58 +418,50 @@ namespace WIP_Polygon {
                 return;
             }
         }
-
-        /*int x{};
-        int y{};
-        int z{};
-        glm::vec3 local_pos = glm::inverse(localToWorld) * glm::vec4(_pObject->MinCorner(), 1.0f);
-        TerrainVolume::GetTerrainIndices(local_pos, x, y, z);
-        if (terrain[x][y][z] == nullptr) { return; }
-        AABB* p = terrain[x][y][z]->pObjList;
-
-        if (p == _pObject) {
-            terrain[x][y][z]->pObjList = p->pNextObject;
-            p->pNextObject = nullptr;
-            if (terrain[x][y][z]->pObjList == nullptr) { terrain[x][y][z] = nullptr; }
-            return;
-        }
-        while (p) {
-            std::cout << "TerrainVolume::RemoveObject() 2" << "\n";
-            AABB* q = p;
-            p = p->pNextObject;
-            if (p == _pObject) {
-                q->pNextObject = p->pNextObject;
-                if (terrain[x][y][z]->pObjList == nullptr) { terrain[x][y][z] = nullptr; }
-                return;
-            }
-        }*/
     }
-    void TerrainVolume::GetCollisionPairs(AABB* a, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) {
-        int min_index_x{};
-        int max_index_x{};
-        int min_index_y{};
-        int max_index_y{};
-        int min_index_z{};
-        int max_index_z{};
-        glm::vec3 min_corner = glm::inverse(localToWorld) * glm::vec4(a->center - a->radius, 1.0f);
-        glm::vec3 max_corner = glm::inverse(localToWorld) * glm::vec4(a->center + a->radius, 1.0f);
-        TerrainVolume::GetTerrainIndices(min_corner, min_index_x, min_index_y, min_index_z);
-        TerrainVolume::GetTerrainIndices(max_corner, max_index_x, max_index_y, max_index_z);
-        collision_pairs.clear();//this won't delete the pointers, only clears the storage
-        //std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>> collision_pairs{};
-        for (int z = min_index_z; z <= max_index_z; z++) {
-            for (int x = min_index_x; x <= max_index_x; x++) {
-                for (int y = min_index_y; y <= max_index_y; y++) {
-                    if (TerrainVolume::terrain[x][y][z] != nullptr) {
-                        //rbs_to_check.push_back(TerrainVolume::terrain[x][y][z]);
-                        for (AABB* aabb = terrain[x][y][z]->pObjList; aabb; aabb = aabb->pNextObject) {
-                            if (aabb == a) { continue; }
-                            collision_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(a, aabb));
+    void TerrainVolume::GetCollisionPairs(std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) {
+        for (int z = 0; z < num_cubes_xyz; z++) {
+            for (int x = 0; x < num_cubes_xyz; x++) {
+                for (int y = 0; y < num_cubes_xyz; y++) {
+                    if (terrain[x][y][z] == nullptr) {
+                        continue;
+                    }
+                    else {
+                        for (AABB* a = terrain[x][y][z]->pObjList; a; a = a->pNextObject) {
+                            if (a->rigidbody->is_static == true) {
+                                continue;
+                            }
+                            else {
+                                int min_index_x{};
+                                int max_index_x{};
+                                int min_index_y{};
+                                int max_index_y{};
+                                int min_index_z{};
+                                int max_index_z{};
+                                glm::vec3 min_corner = glm::inverse(localToWorld) * glm::vec4(a->center - a->radius, 1.0f);
+                                glm::vec3 max_corner = glm::inverse(localToWorld) * glm::vec4(a->center + a->radius, 1.0f);
+                                TerrainVolume::GetTerrainIndices(min_corner, min_index_x, min_index_y, min_index_z);
+                                TerrainVolume::GetTerrainIndices(max_corner, max_index_x, max_index_y, max_index_z);
+                                collision_pairs.clear();//this won't delete the pointers, only clears the storage
+                                for (int z = min_index_z; z <= max_index_z; z++) {
+                                    for (int x = min_index_x; x <= max_index_x; x++) {
+                                        for (int y = min_index_y; y <= max_index_y; y++) {
+                                            if (TerrainVolume::terrain[x][y][z] != nullptr) {
+                                                for (AABB* aabb = terrain[x][y][z]->pObjList; aabb; aabb = aabb->pNextObject) {
+                                                    if (aabb == a) { continue; }
+                                                    collision_pairs.push_back(std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>(a, aabb));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
                         }
                     }
+
                 }
             }
         }
     }
-
 }

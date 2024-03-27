@@ -47,7 +47,7 @@ namespace WIP_Polygon {
 		void RenderGridMeshes() override;
 		void InsertObject(AABB* _pObject) override;
 		void RemoveObject(AABB* _pObject) override;
-		void GetCollisionPairs(AABB* a, std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) override;
+		void GetCollisionPairs(std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) override;
 		void RenderGridLines() override;
 	};
 }

@@ -252,9 +252,9 @@ namespace WIP_Polygon {
 				//if (_aabb_pairs[i].first->rigidbody->is_static) { continue; }
 				WIP_Polygon::Collider* collider_a = _aabb_pairs[i].first->rigidbody->collider;
 				_aabb_pairs[i].first->center = _aabb_pairs[i].first->rigidbody->position;
-				collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->scale);
+				collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->collider->scale);
 				WIP_Polygon::Collider* collider_b = _aabb_pairs[i].second->rigidbody->collider;
-				collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->scale);
+				collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->collider->scale);
 				collider_b->manifold = WIP_Polygon::ContactManifold();
 
 				overlap = CollisionHandler::Overlap(collider_a, collider_b, collider_b->manifold) || overlap;
@@ -269,43 +269,34 @@ namespace WIP_Polygon {
 				_aabb_pairs[i].first->rigidbody->move_delta = offset_a;
 				_aabb_pairs[i].first->rigidbody->UpdateTransform();
 				_aabb_pairs[i].first->center = _aabb_pairs[i].first->rigidbody->position;
-				collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->scale);
+				collider_a->UpdateTransform(_aabb_pairs[i].first->rigidbody->position, _aabb_pairs[i].first->rigidbody->rotation, _aabb_pairs[i].first->rigidbody->collider->scale);
 				_aabb_pairs[i].second->rigidbody->move_delta = offset_b;
 				_aabb_pairs[i].second->rigidbody->UpdateTransform();
 				_aabb_pairs[i].second->center = _aabb_pairs[i].second->rigidbody->position;
-				collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->scale);
+				collider_b->UpdateTransform(_aabb_pairs[i].second->rigidbody->position, _aabb_pairs[i].second->rigidbody->rotation, _aabb_pairs[i].second->rigidbody->collider->scale);
 			}
 			iterations += 1;
 
 		}
 	}
-	void CollisionHandler::UpdateSceneDynamicColliders(WIP_Polygon::Scene& scene){
-		//update positions
-		for (int i = 0; i < scene.aabbs->size(); i++) {
-			if (!scene.aabbs->at(i)->rigidbody->is_static) {
-				scene.aabbs->at(i)->rigidbody->UpdateTransform();
-				scene.aabbs->at(i)->rigidbody->collider->UpdateTransform(scene.aabbs->at(i)->rigidbody->position, scene.aabbs->at(i)->rigidbody->rotation, scene.aabbs->at(i)->rigidbody->scale);
-				scene.aabbs->at(i)->center = scene.aabbs->at(i)->rigidbody->position;
-				scene.aabbs->at(i)->ConstructFromPointSet(scene.aabbs->at(i)->rigidbody->collider);
-				scene.grid->InsertObject(scene.aabbs->at(i));
-			}
-		}
-		//resolve collisions from previous step and reupdate positions
-		for (int i = 0; i < scene.aabbs->size(); i++) {
-			if (!scene.aabbs->at(i)->rigidbody->is_static) {
-				scene.grid->GetCollisionPairs(scene.aabbs->at(i), *(scene.collision_pairs));
-				ResolveCollisions(*(scene.collision_pairs));
-				for (int j = 0; j < scene.collision_pairs->size(); j++) {
-					if (!scene.collision_pairs->at(j).second->rigidbody->is_static) {
-						scene.grid->InsertObject(scene.collision_pairs->at(j).second->rigidbody->collider->aabb);
-					}
-				}
-				scene.grid->InsertObject(scene.aabbs->at(i));
-			}
-		}
+	void CollisionHandler::ResolveColliions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
 
 	}
+	void CollisionHandler::UpdateSceneDynamicColliders(WIP_Polygon::Scene& scene){
+		//update positions
+		scene.UpdateAABBS();
+		//resolve collisions from previous step and reupdate positions
+		scene.grid->GetCollisionPairs(*(scene.collision_pairs));
+		ResolveCollisions(*(scene.collision_pairs));
+		for (int j = 0; j < scene.aabbs->size(); j++) {
+			if (!scene.aabbs->at(j)->rigidbody->is_static) {
+				scene.grid->InsertObject(scene.aabbs->at(j));
+			}
+		}
+	}
+	void CollisionHandler::UpdateSceneDynamicColliders2(WIP_Polygon::Scene& scene) {
 
+	}
 	void CollisionHandler::CreatePlaneContact(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, PlaneQuery query_A, PlaneQuery query_B, WIP_Polygon::ContactManifold& manifold) {
 		if (query_A.min_penetration > query_B.min_penetration) {
 			manifold = ClipPolygon(b, a, query_A);

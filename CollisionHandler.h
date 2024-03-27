@@ -50,7 +50,11 @@ namespace WIP_Polygon {
 
 		void ResolveCollisions(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
 
+		void ResolveColliions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
+
 		void UpdateSceneDynamicColliders(WIP_Polygon::Scene& scene);
+
+		void UpdateSceneDynamicColliders2(WIP_Polygon::Scene& scene);
 
 		void CreatePlaneContact(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, PlaneQuery query_A, PlaneQuery query_B, WIP_Polygon::ContactManifold& manifold);
 
