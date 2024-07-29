@@ -37,7 +37,7 @@ namespace WIP_Polygon {
 		glm::vec3 Up();
 		void UpdatePosition();
 		void UpdateRotation();
-		void UpdateTransform();
+		virtual void UpdateTransform();
 	};
 }
 #endif

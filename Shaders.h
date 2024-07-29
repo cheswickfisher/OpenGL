@@ -5,6 +5,7 @@
 namespace WIP_Polygon {
 	class Shaders{
 	public:
+		static Shader directional_shader;
 		static Shader lightingShader;
 		static Shader debugShader;
 		static std::vector<Shader*>shaders;

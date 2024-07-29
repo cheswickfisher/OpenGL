@@ -18,6 +18,11 @@ namespace WIP_Polygon {
 		: Rigidbody{ _scale, _position, _rotation, _mass, _collider },
 		moveSpeed(1.0f), moveDirection(glm::vec3(0.0f)), turnSpeed(1.0f)
 	{}
+	CharacterControls::CharacterControls(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation, float _mass, float _moveSpeed, float _turnSpeed, WIP_Polygon::Collider* _collider) 
+		: Rigidbody{ _scale, _position, _rotation, _mass, _collider },
+		moveSpeed(_moveSpeed), moveDirection(glm::vec3(0.0f)), turnSpeed(_turnSpeed)
+	{}
+
 	/*CharacterControls::CharacterControls() :
 		moveSpeed{ 1.0f }, moveDirection{ glm::vec3(0.0f) },
 		turnSpeed{ 1.0f }, GameObject{},

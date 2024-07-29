@@ -13,7 +13,9 @@
 namespace WIP_Polygon {
 	class MeshImports {
 	public:
-		static OBJMesh test_cube;		
+		static OBJMesh test_cube;
+		static OBJMesh unit_cube;
+		static OBJMesh little_ship;
 	};
 }
 #endif

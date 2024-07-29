@@ -1,4 +1,4 @@
-#include "Shader.h"
+ #include "Shader.h"
 
 namespace WIP_Polygon {
 	Shader::Shader() {

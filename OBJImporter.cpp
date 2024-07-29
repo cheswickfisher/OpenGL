@@ -58,7 +58,7 @@ namespace WIP_Polygon {
 
 	void TriangulateFace(face _face, std::vector<int>& triangles, std::vector<glm::vec3> _vertices) {
 		int vertex_index = 1;
-		for (int i = 0; i < 6; i+=3) {
+		for (int i = 0; i < /*6*/_face.index_set.size(); i+=3) {
 			int v1 = _face.index_set[0].vertex;
 			int v2 = _face.index_set[vertex_index].vertex;
 			int v3 = _face.index_set[vertex_index + 1].vertex;
@@ -112,24 +112,35 @@ namespace WIP_Polygon {
 					faces.push_back(face);
 				}
 			}
+			std::cout << "normals size: " << normals.size() << "\n";
 			for (int i = 0; i < faces.size(); i++) {
+				std::cout << "face[" << i << "]\n";
 				face f = faces[i];
 				std::vector<int>triangles{};
 			    TriangulateFace(f, triangles, vertices);
+				//TODO account for 3d meshes that don't have normals so don't get array out of bounds error
+				//depth_testing.vs shader will look fucked up until then.
 				for (int j = 0; j < triangles.size(); j++) {
+					std::cout << "triangles[" << j << "] = " << triangles[j] << "\n";
 					float vx = vertices[triangles[j]].x;
 					float vy = vertices[triangles[j]].y;
-					float vz = vertices[triangles[j]].z;
+					float vz = vertices[triangles[j]].z;					
+					float nx = normals[i].x;
+					float ny = normals[i].y;
+					float nz = normals[i].z;
 					float uvx = uvs[triangles[j]].x;
 					float uvy = uvs[triangles[j]].y;
 					mesh.mesh_data.push_back(vx);
 					mesh.mesh_data.push_back(vy);
 					mesh.mesh_data.push_back(vz);
+					mesh.mesh_data.push_back(nx);
+					mesh.mesh_data.push_back(ny);
+					mesh.mesh_data.push_back(nz);
 					mesh.mesh_data.push_back(uvx);
 					mesh.mesh_data.push_back(uvy);
 				}
 			}
-#define DEBUG_OBJ_OUTPUT
+//#define DEBUG_OBJ_OUTPUT
 #ifdef DEBUG_OBJ_OUTPUT
 			std::cout << "vertices: " << "\n";
 			for (int i = 0; i < vertices.size(); i++) {

@@ -25,6 +25,7 @@
 #include "AABB.h"
 #include "Scenes\Scene_1.h"
 #include "Scenes\Scene_3.h"
+#include "Scenes\Scene_4.h"
 #include "Preferences.h"
 #include "OBJImporter.h"
 
@@ -37,6 +38,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #define IDENTITY_QUAT glm::quat(1.0f,0.0f,0.0f,0.0f)
 
@@ -63,9 +65,10 @@ WIP_Polygon::CollisionHandler collisionHandler;
 
 //load scenes here
 //WIP_Polygon::Scene_1 scene_1{};
-WIP_Polygon::Scene_3 scene_3{};
+//WIP_Polygon::Scene_3 scene_3{};
+WIP_Polygon::Scene_4 scene_4{};
 //set active scene here
-WIP_Polygon::Scene& scene{ scene_3 };
+WIP_Polygon::Scene& scene{ scene_4 };
 
 int main() {
     glfwInit();
@@ -75,7 +78,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
     window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGLAdvanced", NULL, NULL);
-
+    
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << '\n';
         glfwTerminate();
@@ -102,6 +105,7 @@ int main() {
     float accumulator = 0;
     float frame_start = static_cast<float>(glfwGetTime());
 
+    std::cout << "start program" << "\n";
     while (!glfwWindowShouldClose(window)) {
         //std::cout << "start frame" << "\n";
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -112,8 +116,11 @@ int main() {
         if (accumulator > 0.2f) {
             accumulator = 0.2f;
         }
+        //WIP_Polygon::Debug::DrawDebugCube(glm::vec3(0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f), Colors::White, 1.0f);
 
         scene.HandleInput(window);
+        //moving this to after physics update, so input forces get applied only after collision forces are 
+        //  accounted for.
         update();
         //std::cout << "start phys" << "\n";
         while (accumulator > fixed_dt) {
@@ -121,8 +128,10 @@ int main() {
             accumulator -= fixed_dt;
         }  
         //std::cout << "end phys" << "\n";
-
+        //std::cout << "start render" << "\n";
         render();
+
+        //std::cout << "end render" << "\n";
         //std::cout << "end frame" << "\n";
     }
 
@@ -143,14 +152,14 @@ void update() {
     }
 }
 
-void updatePhysics() {
-    collisionHandler.UpdateSceneDynamicColliders(scene);
+void updatePhysics() {    
+    collisionHandler.UpdateSceneDynamicColliders2(scene);
 }
 
 void render() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
     scene.DrawScene();
 
     glfwSwapBuffers(window);

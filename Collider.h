@@ -35,6 +35,7 @@ namespace WIP_Polygon {
 		glm::vec3 GetSupport(glm::vec3 direction);
 		virtual ~Collider() = 0;
 		virtual void DrawAxes() = 0;
+		virtual glm::mat3 CalculateInertiaTensor() = 0;
 
 	};
 }

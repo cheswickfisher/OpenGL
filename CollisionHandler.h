@@ -14,11 +14,13 @@
 #include "Quad.h"
 #include "Manifold.h"
 #include "Scene.h"
+#include "Preferences.h"
 #include "glm\glm\glm.hpp"
 #include <glm\glm\gtc\type_ptr.hpp>
 #include <glm\glm\gtc\quaternion.hpp>
 #include <glm\glm\gtx\quaternion.hpp>
 #include <iostream>
+#include <vector>
 
 #define PLANE_THICKNESS_EPSILON 0.0001f
 #define POINT_IN_FRONT_OF_PLANE 0
@@ -50,7 +52,9 @@ namespace WIP_Polygon {
 
 		void ResolveCollisions(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
 
-		void ResolveColliions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
+		void ResolveCollisions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
+
+		void ResolveCollisions3(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs);
 
 		void UpdateSceneDynamicColliders(WIP_Polygon::Scene& scene);
 
@@ -65,6 +69,8 @@ namespace WIP_Polygon {
 		std::vector<glm::vec3> Intersect(glm::vec3 plane_origin, glm::vec3 plane_normal, glm::vec3 line_start, glm::vec3 line_end, std::vector<glm::vec3>in);
 
 		int IntersectSegmentPlane(glm::vec3 a, glm::vec3 b, glm::vec3 plane_normal, glm::vec3 plane_point, float& t, glm::vec3& q);
+
+		glm::vec3 ProjectPointToPlane(glm::vec3 p, glm::vec3 plane_normal, glm::vec3 plane_point);
 
 		int ClassifyPointToPlane(glm::vec3 p, glm::vec3 plane_normal, glm::vec3 plane_point);
 

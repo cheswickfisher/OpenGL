@@ -1,4 +1,3 @@
-#pragma once
 #ifndef OCTREE_H
 #define OCTREE_H
 #include "AABB.h"
@@ -31,7 +30,6 @@ namespace WIP_Polygon {
 		void RemoveObject(AABB* _pObject) override;
 		void GetCollisionPairs(std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& collision_pairs) override;
 		void RenderGridLines() override;
-
 
 		Octree(glm::vec3 _center, float _halfWidth, int _levels);
 	};

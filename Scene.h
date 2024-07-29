@@ -30,6 +30,9 @@
 #include "Preferences.h"
 #include "Grid.h"
 #include "MeshImports.h"
+#include "ON2.h"
+#include "PhysicsHandler.h"
+#include "UtilityMethods.h"
 
 #include <glfw3.h>
 #include <glm\glm\glm.hpp>
@@ -41,6 +44,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace WIP_Polygon {
 	class Scene {
@@ -48,8 +52,10 @@ namespace WIP_Polygon {
 			const float infinity = std::numeric_limits<float>::infinity();
 			Camera* camera;
 			WIP_Polygon::Debug* debug;
+			PhysicsHandler* physics_handler;
 
 			std::vector<WIP_Polygon::AABB*>*aabbs;
+			std::vector<WIP_Polygon::Rigidbody*>*rbs;
 			std::vector<WIP_Polygon::GameObject*>*gameobjects;
 			std::vector<WIP_Polygon::MeshRenderer*>*mesh_renderers;
 			std::vector < std::pair<WIP_Polygon::AABB*, WIP_Polygon::AABB*>>* collision_pairs;
@@ -60,6 +66,7 @@ namespace WIP_Polygon {
 			//this can probably not be virtual
 			virtual void LoadScene() = 0;
 			virtual void DrawScene() = 0;
+			void GetRbs();
 			void PrepCamAndShaderMatrices(glm::vec3 cameraTarget);
 			void DrawMeshes();
 			void UpdateAABBS();

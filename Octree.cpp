@@ -12,7 +12,8 @@ namespace WIP_Polygon {
 	const int Octree::max_levels = 10;
 	Octree::Octree(glm::vec3 _center, float _halfWidth, int _levels) :
 		levels{ _levels }, center{ _center }, halfWidth{ _halfWidth }, root{ nullptr } //root{ BuildOctree(_center, _halfWidth, _levels) }
-	{}
+	{
+	}
 	Node* Octree::BuildOctree(glm::vec3 _center, float _halfWidth, int _stopDepth) {
 		if (_stopDepth < 0) { return nullptr; }
 		else {

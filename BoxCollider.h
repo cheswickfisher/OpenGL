@@ -22,6 +22,7 @@ namespace WIP_Polygon {
 		BoxCollider(glm::vec3 _scale, glm::vec3 _position);
 		BoxCollider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation);
 		void DrawAxes() override;
+		glm::mat3 CalculateInertiaTensor() override;
 	};
 }
 #endif

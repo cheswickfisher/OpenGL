@@ -1,34 +1,6 @@
 #include "CollisionHandler.h"
 
 namespace WIP_Polygon {
-	float CollisionHandler::Distance(WIP_Polygon::HalfEdge edge_a, WIP_Polygon::HalfEdge edge_b, WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, glm::vec3& normal) {
-		glm::vec3 pos = edge_a.Direction();
-		//still f'ing around with scale issues that pop up in corner collisions.
-		glm::vec3 edge_a_dir = a->rotation * edge_a.Direction();
-		//edge_a_dir = edge_a.Direction();
-		//edge_a_dir = glm::inverse(b->rotation) * a->rotation * edge_a.Direction();
-		glm::vec3 edge_a_head = a->m_localToWorld * glm::vec4(edge_a.origin->position, 1.0f);
-		//edge_a_head = edge_a.origin->position;
-		//edge_a_head = glm::inverse(b->m_localToWorld) * a->m_localToWorld * glm::vec4(edge_a.origin->position, 1.0f);
-		glm::vec3 edge_b_dir = b->rotation * edge_b.Direction();
-		//std::cout << "b rotation: " << b->rotation.x << "," << b->rotation.y << "," << b->rotation.z << "," << b->rotation.w << "\n";
-		//edge_b_dir = glm::inverse(a->rotation) * b->rotation * edge_b.Direction();
-		//edge_b_dir = edge_b.Direction();
-		glm::vec3 edge_b_head = b->m_localToWorld * glm::vec4(edge_b.origin->position, 1.0f);
-		//edge_b_head = glm::inverse(a->m_localToWorld) * b->m_localToWorld * glm::vec4(edge_b.origin->position, 1.0f);
-		//edge_b_head = edge_b.origin->position;
-		if (glm::dot(glm::abs(edge_a_dir), glm::abs(edge_b_dir)) > PARALLEL) {
-			return std::numeric_limits<float>::lowest();
-		}
-		normal = glm::normalize(glm::cross(edge_a_dir, edge_b_dir));
-		if (glm::dot(normal, edge_a_head - a->center) < 0.0f)
-			//if (glm::dot(normal, glm::vec3(a->m_localToWorld * glm::vec4(a->center,1.0f) - b->m_localToWorld * glm::vec4(b->center,1.0f))) < 0.0f)
-		{
-			normal = -normal;
-		}
-		//return glm::dot(normal, glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_b_head,0.0f)) - glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_a_head,0.0f)));
-		return glm::dot(normal, edge_b_head - edge_a_head);
-	}
 
 	float CollisionHandler::ClosestPtSegmentSegment(glm::vec3 p1, glm::vec3 q1, glm::vec3 p2, glm::vec3 q2, float& s, float& t, glm::vec3& c1, glm::vec3& c2) {
 		//TODO optimize division by e in non-degenerate case
@@ -88,8 +60,44 @@ namespace WIP_Polygon {
 		c2 = p2 + d2 * t;
 		return glm::dot(c1 - c2, c1 - c2);
 	}
+	float CollisionHandler::Distance(WIP_Polygon::HalfEdge edge_a, WIP_Polygon::HalfEdge edge_b, WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, glm::vec3& normal) {
+		glm::vec3 pos = edge_a.Direction();
+		//still f'ing around with scale issues that pop up in corner collisions.
+		glm::vec3 edge_a_dir = a->rotation * edge_a.Direction();
+		//edge_a_dir = edge_a.Direction();
+		//edge_a_dir = glm::inverse(b->rotation) * a->rotation * edge_a.Direction();
+		glm::vec3 edge_a_head = a->m_localToWorld * glm::vec4(edge_a.origin->position, 1.0f);
+		//edge_a_head = edge_a.origin->position;
+		//edge_a_head = glm::inverse(b->m_localToWorld) * a->m_localToWorld * glm::vec4(edge_a.origin->position, 1.0f);
+		glm::vec3 edge_b_dir = b->rotation * edge_b.Direction();
+		//std::cout << "b rotation: " << b->rotation.x << "," << b->rotation.y << "," << b->rotation.z << "," << b->rotation.w << "\n";
+		//edge_b_dir = glm::inverse(a->rotation) * b->rotation * edge_b.Direction();
+		//edge_b_dir = edge_b.Direction();
+		glm::vec3 edge_b_head = b->m_localToWorld * glm::vec4(edge_b.origin->position, 1.0f);
+		//edge_b_head = glm::inverse(a->m_localToWorld) * b->m_localToWorld * glm::vec4(edge_b.origin->position, 1.0f);
+		//edge_b_head = edge_b.origin->position;
 
+		//glm::vec3 a_next = a->m_localToWorld * glm::vec4(edge_a.next->origin->position, 1.0f);
+		//glm::vec3 b_next = b->m_localToWorld * glm::vec4(edge_b.next->origin->position, 1.0f);
+		//Debug::DrawDebugLine(edge_a_head, a_next, Colors::Magenta, 5.0f);
+		//Debug::DrawDebugLine(edge_b_head, b_next, Colors::Red, 5.0f);
+
+		if (glm::dot(glm::abs(edge_a_dir), glm::abs(edge_b_dir)) > PARALLEL) {
+			return -std::numeric_limits<float>::infinity();
+		}
+		normal = glm::normalize(glm::cross(edge_a_dir, edge_b_dir));
+		if (glm::dot(normal, edge_a_head - a->center) < 0.0f)
+			//if (glm::dot(normal, edge_a_head - a->center) < 0.0f)
+				//if (glm::dot(normal, glm::vec3(a->m_localToWorld * glm::vec4(a->center,1.0f) - b->m_localToWorld * glm::vec4(b->center,1.0f))) < 0.0f)
+		{
+			normal = -normal;
+		}
+		//return glm::dot(normal, glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_b_head,0.0f)) - glm::vec3(glm::scale(glm::mat4(1.0f), b->scale) * glm::vec4(edge_a_head,0.0f)));
+		return glm::dot(normal, edge_b_head - edge_a_head);
+	}
+	//issue is when there's no rotation on the plane and cube, no minkowski faces are detected even when there's overlap
 	bool CollisionHandler::BuildMinkowskiFace(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::HalfEdge edge_a, WIP_Polygon::HalfEdge edge_b) {
+	
 		if (edge_a.incident_face == nullptr || edge_b.incident_face == nullptr) { return false; }
 		glm::vec3 norm_a = a->rotation * edge_a.incident_face->normal;
 		glm::vec3 norm_b{};
@@ -126,15 +134,19 @@ namespace WIP_Polygon {
 		float dba = glm::dot(d, b_x_a);
 		float adc = glm::dot(a, d_x_c);
 		float bdc = glm::dot(b, d_x_c);
-
+		//std::cout << "ba(" << ba.x << "," << ba.y << "," << ba.z << ") dc(" << dc.x << "," << dc.y << "," << dc.z << ") " << " cba-> " << cba << " dba->" << dba << " adc->" << adc << " bdc->" << bdc << "\n";
+		//std::cout << "a(" << a.x << "," << a.y << "," << a.z << ") b(" << b.x << "," << b.y << "," << b.z << ")" << "\n";
+		//std::cout << "c(" << c.x << "," << c.y << "," << c.z << ") d(" << d.x << "," << d.y << "," << d.z << ")" << "\n";
 		return cba * dba < 0 && adc * bdc < 0 && cba * bdc > 0;
 	}
 
 	PlaneQuery CollisionHandler::QueryFaceDirections(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b) {
 		PlaneQuery q{};
-		q.max_distance = std::numeric_limits<float>::lowest();
-		q.min_penetration = std::numeric_limits<float>::lowest();
-		q.max_index = 0;
+		q.max_distance = -std::numeric_limits<float>::infinity(); //changed from std::numeric_limits<float>::lowest()
+		//q.max_distance = std::numeric_limits<float>::lowest();
+		q.min_penetration = -std::numeric_limits<float>::infinity();
+		//q.min_penetration = std::numeric_limits<float>::lowest();
+ 		q.max_index = 0;
 		q.min_index = 0;
 		for (int i = 0; i < a->collider->planes.size(); i++) {
 			WIP_Polygon::Plane planeA = a->collider->planes[i];
@@ -164,46 +176,77 @@ namespace WIP_Polygon {
 
 	EdgeQuery CollisionHandler::QueryEdgeDirections(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b) {
 		EdgeQuery q{};
-		q.max_distance = std::numeric_limits<float>::lowest();
-		q.min_distance = std::numeric_limits<float>::lowest();
+		//q.max_distance = -std::numeric_limits<float>::infinity();
+		q.max_distance = -std::numeric_limits<float>::infinity();
+		//q.min_distance = -std::numeric_limits<float>::infinity();
+		q.min_distance = -std::numeric_limits<float>::infinity();
+		float max_dist = -std::numeric_limits<float>::infinity();
+		float min_dist = -std::numeric_limits<float>::infinity();
+		//q.min_distance = std::numeric_limits<float>::lowest();
 		q.max_edge_a = 0;
 		q.max_edge_b = 0;
 		q.min_edge_a = 0;
 		q.min_edge_b = 0;
+		std::vector<std::pair<int, int>>debug_edges{};
+		int z = 0;
 		for (int i_a = 0; i_a < a->collider->edges.size(); i_a++)
 		{
 			WIP_Polygon::HalfEdge edge_a = a->collider->edges[i_a];
 			for (int i_b = 0; i_b < b->collider->edges.size(); i_b++)
 			{
+				z++;
+				//std::cout << "run i[a]: " << i_a << " i[b]: " << i_b << "\n";
 				WIP_Polygon::HalfEdge edge_b = b->collider->edges[i_b];
 				if (BuildMinkowskiFace(a, b, edge_a, edge_b)) {
+					std::pair<int, int> tt{ i_a, i_b };
+					debug_edges.push_back(tt);
+
 					glm::vec3 n{};
 					float separation = Distance(edge_a, edge_b, a, b, n);
-					if (separation > q.max_distance) {
+					//std::cout << "separation: " << separation << "\n";					
+					//if (separation > q.max_distance) {
+					if (separation > max_dist) {
+						max_dist = separation;
 						q.max_distance = separation;
 						q.max_edge_a = i_a;
 						q.max_edge_b = i_b;
 					}
-					if (separation < 0.0f && separation > q.min_distance)
+					if (separation < 0.0f && separation > min_dist)
+					//if (separation < 0.0f && separation > q.min_distance)
+					//if (separation < 0.0f && glm::abs(separation) < glm::abs(q.min_distance))
 					{
+						min_dist = separation;
 						q.min_distance = separation;
 						q.min_edge_a = i_a;
 						q.min_edge_b = i_b;
 						q.edge_normal = n;
 					}
 				}
+				else {
+				}
+				//std::cout << "\n";
 			}
 		}
+		//std::cout << "kept edge pairs: " << debug_edges.size() << "\n";
+		//std::cout << "total edge pairs: " << z << "\n";
+		debug_edges.clear();
+		/*for (int i = 0; i < debug_edges.size(); i++) {
+			std::cout << debug_edges[i].first << ", " << debug_edges[i].second << "\n";
+		}
+		std::cout << "\n";*/
 		return q;
 	}
 
 	bool CollisionHandler::Overlap(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, WIP_Polygon::ContactManifold& manifold) {
+		//std::cout << "a[" << a->aabb->rigidbody->name << "] b[" << b->aabb->rigidbody->name << "]" << "\n";
 		PlaneQuery q_a = QueryFaceDirections(a, b);
 		if (q_a.max_distance > 0.0f) {
+			//std::cout << "q_a = " << q_a.max_distance << "\n";
 			return false;
 		}
 		PlaneQuery q_b = QueryFaceDirections(b, a);
 		if (q_b.max_distance > 0.0f) {
+			//std::cout << "q_b = " << q_b.max_distance << "\n";
 			return false;
 		}
 		EdgeQuery e = QueryEdgeDirections(a, b);
@@ -221,20 +264,26 @@ namespace WIP_Polygon {
 			+ glm::vec4(b.rotation * b.cube.edges[e.max_edge_b].Direction(), 1.0f)
 			, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f), Colors::Orange, 1.0);
 #endif
+		//std::cout << "e_min-> " << e.min_distance << " e_max-> " << e.max_distance << "\n";
 		if (e.max_distance > 0.0f) {
+			//std::cout << "e_max > 0.0f " << e.max_distance << "\n";
 			return false;
 		}
 		//#define DEBUG
 
 		bool blsFaceContactA = q_a.min_penetration > e.min_distance;
 		bool blsFaceContactB = q_b.min_penetration > e.min_distance;
+		//std::cout << "q_a.min/max->" << q_a.min_penetration << "/" << q_a.max_distance << " q_b.min/max-> " << q_b.min_penetration << "/" << q_b.max_distance << "\n";
+	
 		//std::cout << "qa min_pen -> " << q_a.min_penetration << " qb min_pen -> " << q_b.min_penetration << " e min_dist -> " << e.min_distance <<  "\n";
 		if (blsFaceContactA || /*&&*/ blsFaceContactB) {
+			//std::cout << "plane contact" << "\n";
 			CreatePlaneContact(a, b, q_a, q_b, manifold);
-
 		}
 		else {
+			//std::cout << "edge contact" << "\n";
 			CreateEdgeContact(a, b, e, manifold);
+
 		}
 #endif
 		return true;
@@ -279,10 +328,185 @@ namespace WIP_Polygon {
 
 		}
 	}
-	void CollisionHandler::ResolveColliions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
+	void CollisionHandler::ResolveCollisions2(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
+		for (int i = 0; i < _aabb_pairs.size(); i++) {
+			WIP_Polygon::Collider* collider_a = _aabb_pairs[i].first->rigidbody->collider;
+			WIP_Polygon::Collider* collider_b = _aabb_pairs[i].second->rigidbody->collider;
+			collider_b->manifold = WIP_Polygon::ContactManifold();
+			bool overlap = CollisionHandler::Overlap(collider_a, collider_b, collider_b->manifold);
+			if (overlap) {
+				//continue;
+				//negate component of input force in opposite direction of contact normal
+				glm::vec3 normal_force_a = glm::min(0.0f,glm::dot(collider_a->aabb->rigidbody->force, collider_b->manifold.contact_normal))
+					* collider_b->manifold.contact_normal;
+				glm::vec3 normal_force_b = glm::min(0.0f, glm::dot(collider_b->aabb->rigidbody->force, -collider_b->manifold.contact_normal))
+					* collider_b->manifold.contact_normal;
+				collider_a->aabb->rigidbody->AddForce(normal_force_a);
+				collider_b->aabb->rigidbody->AddForce(normal_force_b);
+				float collision_force = glm::min(glm::abs(collider_b->manifold.contact_penetration), depen_mtp);
+				collider_a->aabb->rigidbody->AddForce(collision_force * collider_b->manifold.contact_normal);
+				collider_b->aabb->rigidbody->AddForce(collision_force * -collider_b->manifold.contact_normal);
+			}
+		}
+	}
+	void CollisionHandler::ResolveCollisions3(std::vector<std::pair <WIP_Polygon::AABB*, WIP_Polygon::AABB*>>& _aabb_pairs) {
+		for (int i = 0; i < _aabb_pairs.size(); i++) {
+			//std::cout << "aabb pair count: " << _aabb_pairs.size() << "\n";
+			//continue;
+			WIP_Polygon::Collider* collider_a = _aabb_pairs[i].first->rigidbody->collider;
+			WIP_Polygon::Collider* collider_b = _aabb_pairs[i].second->rigidbody->collider;
+			collider_b->manifold = WIP_Polygon::ContactManifold();	
+			bool overlap = CollisionHandler::Overlap(collider_a, collider_b, collider_b->manifold);
+			//std::cout << "overlap: " << overlap << " i: " << i << "\n";
+			if (overlap) {
+				//std::cout << "OVERLAP DETECTED OVERLAP DETECTED OVERLAP DETECTED OVERLAP DETECTED" << "\n";
+				//std::cout << "OVERLAP DETECTED OVERLAP DETECTED OVERLAP DETECTED OVERLAP DETECTED" << "\n";
 
+				//continue;
+				//std::cout << "contact count: " << collider_b->manifold.contact_points.size() << "\n";
+				//std::cout << "collider_a: " << collider_a->aabb->rigidbody->name << "\n";
+				//std::cout << "collider_b: " << collider_b->aabb->rigidbody->name << "\n";
+				//normal is in world space
+				glm::vec3 n = collider_b->manifold.contact_normal;
+				float ma = collider_a->aabb->rigidbody->mass;
+				float mb = collider_b->aabb->rigidbody->mass;
+				float inv_ma = 1 / ma;
+				float inv_mb = 1 / mb;
+				glm::mat3 Ia = collider_a->aabb->rigidbody->inertia_tensor;
+				glm::mat3 Ib = collider_b->aabb->rigidbody->inertia_tensor;
+				glm::vec3 va = collider_a->aabb->rigidbody->velocity;
+				glm::vec3 vb = collider_b->aabb->rigidbody->velocity;
+				glm::vec3 wa = collider_a->aabb->rigidbody->angular_velocity;
+				glm::vec3 wb = collider_b->aabb->rigidbody->angular_velocity;
+				wb = glm::vec3(-wb.x, wb.y, wb.z);
+				//std::cout << "angular_velocity_b: (" << wb.x << "," << wb.y << "," << wb.z << ")" << "\n";
+				float accumulated_impulse{ 0.0f };
+
+				glm::vec3 vap = glm::vec3(0.0f);
+				glm::vec3 vbp = glm::vec3(0.0f);
+				glm::vec3 wap = glm::vec3(0.0f);
+				glm::vec3 wbp = glm::vec3(0.0f);
+				float accumulated_impulse_p{ 0.0f };
+
+				for (int j = 0; j < collider_b->manifold.contact_point_count; j++) {					
+					//calculate jr for each contact point
+					//remember relative velocity includes angular velocity	
+					glm::vec3 p = collider_b->manifold.contact_points[j]; //contact points are stored in world space
+					Debug::DrawDebugCube(p, glm::quat(0.0f, 0.0f, 0.0f, 1.0f), glm::vec3(0.1f), Colors::Green, 1.0f);
+					Debug::DrawDebugLine(collider_b->aabb->rigidbody->position, collider_b->aabb->rigidbody->position + n * 0.5f, Colors::Red, 1.0f);
+					Debug::DrawDebugCube(collider_b->aabb->rigidbody->position + n * 0.5f, glm::quat(0.0f, 0.0f, 0.0f, 1.0f), glm::vec3(0.1f), Colors::Red, 1.0f);
+					Debug::DrawDebugLine(collider_b->aabb->rigidbody->position, collider_b->aabb->rigidbody->position + n * collider_b->manifold.contact_penetration, Colors::Green, 1.0f);
+					//std::cout << "va start:(" << va.x << "," << va.y << "," << va.z << ")" << "\n";
+					//std::cout << "vb start:(" << vb.x << "," << vb.y << "," << vb.z << ")" << "\n";
+					//std::cout << "wa start:(" << wa.x << "," << wa.y << "," << wa.z << ")" << "\n";
+					//std::cout << "wb start:(" << wb.x << "," << wb.y << "," << wb.z << ")" << "\n";
+
+					//glm::vec3 ra = p - collider_a->aabb->rigidbody->position;
+					//glm::vec3 rb = p - collider_b->aabb->rigidbody->position;
+					glm::vec3 ra = p - collider_a->aabb->rigidbody->position;
+					glm::vec3 rb = p - collider_b->aabb->rigidbody->position;
+					glm::vec3 vpa = va + glm::cross(wa, ra);
+					glm::vec3 vpb = vb + glm::cross(wb, rb);
+
+					glm::vec3 vpap = vap + glm::cross(wap, ra);
+					glm::vec3 vpbp = vbp + glm::cross(wbp, rb);
+					glm::vec3 vrp = vpap - vpbp;
+
+					glm::vec3 vr = vpa - vpb; //relative velocity at contact point
+					float error = -0.2f * (1 / deltaTime) * glm::min(0.0f, collider_b->manifold.contact_penetration + 0.01f);
+					//float error = glm::dot(-collider_a->aabb->rigidbody->position - ra + collider_b->aabb->rigidbody->position + rb, n);
+					//glm::vec3 vr = va + glm::cross(wa, ra) - vb - glm::cross(wb, rb);
+					//glm::vec3 vr = vb + glm::cross(wb, rb) - va - glm::cross(wa, ra);
+					glm::vec3 raXn = glm::cross(ra, n);
+					glm::vec3 rbXn = glm::cross(rb, n);
+					float z = glm::dot(glm::inverse(Ia) * glm::cross(glm::cross(ra, n), ra) +
+						glm::inverse(Ib) * glm::cross(glm::cross(rb, n), rb), n);
+					float zzz = glm::dot((Ia) * glm::cross(glm::cross(ra, n), ra) +
+						(Ib) * glm::cross(glm::cross(rb, n), rb), n);
+					float zz = glm::dot(raXn, Ia * raXn) + glm::dot(rbXn, Ib * rbXn);
+					float jr_dot = glm::dot(vr, n);
+					float jr_dot_p = glm::dot(vrp, n);
+					float jr_top = (-(1 + 0.0f) * jr_dot);
+					float jr_top_p = (-(1 + 0.0f) * jr_dot_p + error);
+					//float jr_top = jr_dot;
+					//float jr_top = (-(1 + 1.0f) * glm::dot(vr, n));
+					float jr_bottom = (inv_ma + inv_mb + zz);
+					float jr = jr_top /
+					 jr_bottom;
+					float jrp = jr_top_p / jr_bottom;
+					/*float jr = (-glm::dot(vr, n) - 0.5f) /
+						(ma + mb + glm::dot(glm::cross(ra, n), Ia * glm::cross(ra,n)) + glm::dot(glm::cross(rb, n), Ib * glm::cross(rb, n)));*/
+					//jr = glm::abs(jr);
+					/*float temp_ai = accumulated_impulse;
+					temp_ai = glm::max(0.0f, temp_ai + jr);
+					jr = temp_ai - accumulated_impulse;
+					accumulated_impulse += jr;*/
+					/*float tempRn = accumulated_impulse;
+					accumulated_impulse = glm::max(0.0f, tempRn + jr);
+					jr = accumulated_impulse - tempRn;*/
+					float temp_ai = accumulated_impulse;
+					accumulated_impulse = glm::max(0.0f, accumulated_impulse + jr);
+					jr = accumulated_impulse - temp_ai;
+
+					float temp_ai_p = accumulated_impulse_p;
+					accumulated_impulse_p = glm::max(0.0f, accumulated_impulse_p + jrp);
+					jrp = accumulated_impulse_p - temp_ai_p;
+
+					glm::vec3 Jr = jr * n;
+					glm::vec3 Jrp = jrp * n;
+					Debug::DrawDebugLine(collider_b->aabb->rigidbody->position, collider_b->aabb->rigidbody->position + Jr, Colors::Cyan, 1.0f);
+					/*va = va_og - Jr * inv_ma;
+					vb = vb_og - Jr * inv_mb;
+					wa = wa_og - jr * glm::inverse(Ia) * glm::cross(ra, n);
+					wb = wb_og - jr * glm::inverse(Ib) * glm::cross(rb, n);*/
+					vap += Jrp * inv_ma;
+					vbp -= Jrp * inv_mb;
+					va += Jr * inv_ma + vap;
+					vb -= Jr * inv_mb - vbp;
+					//TODO: inverse not defined for quad collider. transpose makes everything flip out.
+					wap += glm::inverse(Ia) * glm::cross(ra, Jrp);
+					wbp -= glm::inverse(Ib) * glm::cross(rb, Jrp);
+					wa += glm::inverse(Ia) * glm::cross(ra, Jr) + wap;
+					wb -= glm::inverse(Ib) * glm::cross(rb, Jr) - wbp;
+
+					//wa += glm::transpose(Ia) * glm::cross(ra, Jr);
+					//wb -= glm::transpose(Ib) * glm::cross(rb, Jr);
+					//std::cout << "vr[" << j << "]: " << "(" << vr.x << "," << vr.y << "," << vr.z << ")" << "\n";
+					//std::cout << "jr["<< j << "]: " << jr << "\n";
+					//std::cout << "Jr(" << Jr.x << "," << Jr.y << "," << Jr.z << ")\n";
+					//std::cout << "inv_ma: " << inv_ma << "\n";
+					//std::cout << "inv_mb: " << inv_mb << "\n";
+					//std::cout << "jr_dot: " << jr_dot << "\n";
+					//std::cout << "jr_top["<< j << "]: " << jr_top << "\n";
+					//std::cout << "jr_bottom[" << j << "]: " << jr_bottom << "\n";
+					//rotation modification fails along x axis when body going forward, but not going backward.
+
+					//std::cout << "ra:(" << ra.x << "," << ra.y << "," << ra.z << ")" << "\n";
+					//std::cout << "rb:(" << rb.x << "," << rb.y << "," << rb.z << ")" << "\n";
+					//glm::vec3 waXra = glm::cross(wa, ra);
+					//std::cout << "waXra:(" << waXra.x << "," << waXra.y << "," << waXra.z << ")" << "\n";
+					//std::cout << "va:(" << va.x << "," << va.y << "," << va.z << ")" << "\n";
+					//std::cout << "vpa:(" << vpa.x << "," << vpa.y << "," << vpa.z << ")" << "\n";
+					//std::cout << "vpb:(" << vpb.x << "," << vpb.y << "," << vpb.z << ")" << "\n";
+					//std::cout << "vr:(" << vr.x << "," << vr.y << "," << vr.z << ")" << "\n";
+					//std::cout << "jr:(" << jr << ")" << "\n";
+				}
+				/*std::cout << "va:(" << va.x << "," << va.y << "," << va.z << ")" << "\n";
+				std::cout << "wa:(" << wa.x << "," << wa.y << "," << wa.z << ")" << "\n";
+				std::cout << "vb:(" << vb.x << "," << vb.y << "," << vb.z << ")" << "\n";
+				std::cout << "wb:(" << wb.x << "," << wb.y << "," << wb.z << ")" << "\n";*/
+				//std::cout << "\n";
+
+				collider_a->aabb->rigidbody->velocity = va;
+				collider_a->aabb->rigidbody->angular_velocity = wa;
+				collider_b->aabb->rigidbody->velocity = vb;
+				collider_b->aabb->rigidbody->angular_velocity = wb;
+			}
+		}
 	}
 	void CollisionHandler::UpdateSceneDynamicColliders(WIP_Polygon::Scene& scene){
+		//glm::vec3 pv = Debug::GetPlayerRB()->velocity;
+		//std::cout << "player velocity: " << "(" << pv.x << "," << pv.y << "," << pv.z << "\n";
 		//update positions
 		scene.UpdateAABBS();
 		//resolve collisions from previous step and reupdate positions
@@ -295,7 +519,15 @@ namespace WIP_Polygon {
 		}
 	}
 	void CollisionHandler::UpdateSceneDynamicColliders2(WIP_Polygon::Scene& scene) {
-
+		scene.physics_handler->ApplyForces(scene.rbs);
+		for (int i = 0; i < solver_iterations; i++) {
+			scene.UpdateAABBS(); //inertia tensor updated here
+			scene.grid->GetCollisionPairs(*(scene.collision_pairs));
+			ResolveCollisions3(*(scene.collision_pairs));
+			scene.physics_handler->ClearForces(scene.rbs);
+		}
+		//velocity is set in ApplyForces, and cleared in UpdateAABBS. so velocity of all rbs will always be 0 in ResolveCollisions, 
+		//resulting in nothing happening in that method.
 	}
 	void CollisionHandler::CreatePlaneContact(WIP_Polygon::Collider* a, WIP_Polygon::Collider* b, PlaneQuery query_A, PlaneQuery query_B, WIP_Polygon::ContactManifold& manifold) {
 		if (query_A.min_penetration > query_B.min_penetration) {
@@ -306,7 +538,7 @@ namespace WIP_Polygon {
 			manifold = ClipPolygon(a, b, query_B);
 		}
 #ifdef DEBUG
-		//Debug::DrawDebugLine(a->center, a->center + manifold.contact_normal * glm::abs(manifold.contact_penetration), Colors::Green, 1.0f);
+		Debug::DrawDebugLine(a->center, a->center + manifold.contact_normal * glm::abs(manifold.contact_penetration), Colors::Green, 1.0f);
 #endif
 
 	}
@@ -328,13 +560,14 @@ namespace WIP_Polygon {
 		manifold.contact_normal = -e.edge_normal;
 		manifold.contact_type = "edge";
 
-#ifdef DEBUG
+//#ifdef DEBUG
 		Debug::DrawDebugCube(c1, IDENTITY_QUAT, glm::vec3(0.1f), Colors::Red, 1.0f);
 		Debug::DrawDebugCube(c2, IDENTITY_QUAT, glm::vec3(0.1f), Colors::LightPink, 1.0f);
-		Debug::DrawDebugLine(c1, c2, Colors::Strawberry, 1.0f);
+		CheckPositions(manifold.contact_points, Colors::Blue, 0.01f);
+		//Debug::DrawDebugLine(c1, c2, Colors::Strawberry, 1.0f);
 		Debug::DrawDebugLine(c1, c1 - e.edge_normal, Colors::Watermelon, 1.0f);
 
-#endif
+//#endif
 	}
 
 	WIP_Polygon::Plane* CollisionHandler::FindIncidentPlane(WIP_Polygon::Collider* incident, WIP_Polygon::Collider* reference, PlaneQuery& plane_query) {
@@ -374,7 +607,11 @@ namespace WIP_Polygon {
 		}
 		return 0;
 	}
-
+	glm::vec3 CollisionHandler::ProjectPointToPlane(glm::vec3 p, glm::vec3 plane_normal, glm::vec3 plane_point) {
+		float d = glm::dot(plane_normal, plane_point);
+		float dist = glm::dot(plane_normal, p) - d;
+		return p - plane_normal * dist;
+	}
 	int CollisionHandler::ClassifyPointToPlane(glm::vec3 p, glm::vec3 plane_normal, glm::vec3 plane_point) {
 		float d = glm::dot(plane_normal, plane_point);
 		float dist = glm::dot(plane_normal, p) - d;
@@ -388,7 +625,6 @@ namespace WIP_Polygon {
 	}
 
 	WIP_Polygon::ContactManifold CollisionHandler::ClipPolygon(WIP_Polygon::Collider* incident, WIP_Polygon::Collider* reference, PlaneQuery plane_query) {
-		//TODO make consistent w/r/t always moving 1 boxcollider (a)
 		WIP_Polygon::Plane* incident_plane = FindIncidentPlane(incident, reference, plane_query);
 		glm::vec3 incident_plane_normal = incident->rotation * incident_plane->normal;
 		WIP_Polygon::Plane reference_plane = reference->collider->planes[plane_query.min_index];
@@ -479,7 +715,7 @@ namespace WIP_Polygon {
 #ifdef DEBUG
 			if (i == ITERATION) {
 				float dist = glm::dot(clip_plane.edge->origin->position, clip_plane.normal);
-				std::cout << dist << "\n";
+				//std::cout << dist << "\n";
 				glm::vec3 origin = clip_plane.normal * dist;
 				glm::vec3 end = origin + clip_plane.normal;
 				Debug::DrawDebugCube(end, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f), Colors::Blue, 1.0f);
@@ -583,8 +819,10 @@ namespace WIP_Polygon {
 		for (int i = 0; i < clip_verts.size(); i++)
 		{
 			if (ClassifyPointToPlane(clip_verts[i], reference_plane.normal, reference_plane.edge->origin->position) == POINT_BEHIND_PLANE) {
-				//transform contact pt to world space
-				contacts.push_back(reference->m_localToWorld * glm::vec4(clip_verts[i], 1.0f));
+				//transform contact pt to world space 
+				//project onto ref plane for torques
+				contacts.push_back(ProjectPointToPlane(glm::vec3(reference->m_localToWorld * glm::vec4(clip_verts[i], 1.0f)), reference->rotation * reference_plane.normal, glm::vec3(reference->m_localToWorld* glm::vec4(reference_plane.edge->origin->position,1.0f))));
+				//contacts.push_back(glm::vec3(reference->m_localToWorld * glm::vec4(clip_verts[i], 1.0f)));
 				//need to re-scale the reference and incident verts. otherwise the penetration depth will be wrong when the colliders' scales  != 1.0f.
 				//still experimenting with this.
 				float d = glm::dot(reference_plane.normal, glm::vec3(glm::scale(glm::mat4(1.0f), reference->scale) * glm::vec4(reference_plane.edge->origin->position, 1.0f)));
@@ -603,11 +841,11 @@ namespace WIP_Polygon {
 		contact_manifold.contact_points = contacts;
 		contact_manifold.contact_normal = reference->rotation * reference_plane.normal;
 		contact_manifold.contact_type = "face";
-#ifdef DEBUG
+//#ifdef DEBUG
 		//std::cout << "check contact_points" << "\n";
 		CheckPositions(contact_manifold.contact_points, Colors::Red, 0.12f);
 		//std::cout << contact_manifold.contact_points.size() << "\n";
-#endif
+//#endif
 		return contact_manifold;
 	}
 

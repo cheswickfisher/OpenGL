@@ -16,7 +16,7 @@ namespace WIP_Polygon {
     unsigned int circleVAO{};
     unsigned int circleVBO{};
 
-    float debug_line_verts[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<float> debug_line_verts = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     std::vector<float>debug_cube_verts = {   
         -0.5f, -0.5f, -0.5f,
          0.5f, -0.5f, -0.5f,
@@ -65,13 +65,17 @@ namespace WIP_Polygon {
     Debug::Debug() :
         debug_meshes{}
     {}
+
+    std::vector<DebugMesh2> Debug::debug_meshes_2{};
+    std::vector<DebugMesh2> Debug::debug_lines{};
+
 	void Debug::Setup() {
         //line
         glGenVertexArrays(1, &lineVAO);
         glGenBuffers(1, &lineVBO);
         glBindVertexArray(lineVAO);
         glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(debug_line_verts), &debug_line_verts, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, debug_line_verts.size() * sizeof(GLfloat), &debug_line_verts[0], GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glBindVertexArray(0);
@@ -138,34 +142,69 @@ namespace WIP_Polygon {
         WIP_Polygon::Shaders::debugShader.setMat4("projection", projection);
     }
     void Debug::DrawDebugLine(glm::vec3 start, glm::vec3 end, glm::vec4 color, float line_width) {
-        float lineVertices[] = {
+        
+        std::vector<float>lineVertices = {
             start.x, start.y, start.z,
             end.x, end.y, end.z
         };
-        WIP_Polygon::Shaders::debugShader.use();
-        WIP_Polygon::Shaders::debugShader.setMat4("model", glm::mat4(1.0f));
-        WIP_Polygon::Shaders::debugShader.setVec4("color", color);
-        glLineWidth(line_width);
-        glBindVertexArray(lineVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), &lineVertices, GL_STATIC_DRAW);
-        glDrawArrays(GL_LINE_LOOP, 0, 2);
-        glBindVertexArray(0);
-        glLineWidth(1.0f);
+        glm::mat4 model = glm::mat4(1.0f);
+        DebugMesh2 db2{};
+        db2.VAO = lineVAO;
+        db2.VBO = lineVBO;
+        db2.localToWorld = model;
+        db2.verts = lineVertices;
+        db2.color = color;
+        db2.line_width = line_width;
+        debug_lines.push_back(db2);
+    }
+    void Debug::DrawDebugArrow(glm::vec3 start, glm::vec3 end, glm::vec4 color, float line_width) {
+        float d = glm::length(end - start);
+        glm::vec3 dir = glm::normalize(end - start);
+        glm::vec3 p = dir * d * 0.9f;
+        p.y = p.y + d * 0.01f;
+        std::vector<float>lineVertices = {
+            start.x, start.y, start.z,
+            end.x, end.y, end.z,
+            p.x, p.y, p.z
+        };
+        glm::mat4 model = glm::mat4(1.0f);
+        DebugMesh2 db2{};
+        db2.VAO = lineVAO;
+        db2.VBO = lineVBO;
+        db2.localToWorld = model;
+        db2.verts = lineVertices;
+        db2.color = color;
+        db2.line_width = line_width;
+        debug_lines.push_back(db2);
+    }
+    void Debug::DrawDebugLines() {
+        for (int i = 0; i < debug_lines.size(); i++) {
+            WIP_Polygon::Shaders::debugShader.use();
+            WIP_Polygon::Shaders::debugShader.setMat4("model", glm::mat4(1.0f));
+            WIP_Polygon::Shaders::debugShader.setVec4("color", debug_lines[i].color);
+            glLineWidth(debug_lines[i].line_width);
+            glBindVertexArray(lineVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+            glBufferData(GL_ARRAY_BUFFER, debug_lines[i].verts.size() * sizeof(GLfloat), &debug_lines[i].verts[0], GL_STATIC_DRAW);
+            glDrawArrays(GL_LINE_STRIP, 0, debug_lines[i].verts.size() / 3);
+            glBindVertexArray(0);
+            glLineWidth(1.0f);
+        }
+        debug_lines.clear();
     }
     void Debug::DrawDebugCube(glm::vec3 position, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float line_width) {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position) * glm::toMat4(rotation) * glm::scale(model, scale);
-        WIP_Polygon::Shaders::debugShader.use();
-        WIP_Polygon::Shaders::debugShader.setMat4("model", model);
-        WIP_Polygon::Shaders::debugShader.setVec4("color", color);
-        glLineWidth(line_width);
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_LINE_STRIP, 0, 24);
-        glBindVertexArray(0);
-        glLineWidth(1.0f);
+        DebugMesh2 db2{};
+        db2.VAO = cubeVAO;
+        db2.VBO = cubeVBO;
+        db2.localToWorld = model;
+        db2.verts = debug_cube_verts;
+        db2.vert_count = 24;
+        db2.color = color;
+        db2.line_width = line_width;
+        debug_meshes_2.push_back(db2);
     }
-
     void Debug::DrawDebugSphere(glm::vec3 position, float radius, glm::vec4 color, float line_width) {
         glm::quat rot_X = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::quat rot_Y = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -216,6 +255,19 @@ namespace WIP_Polygon {
             glBindVertexArray(0);
             glLineWidth(1.0f);
         }
+    }
+    void Debug::DrawDebugMeshes2() {
+        for (int i = 0; i < debug_meshes_2.size(); i++) {
+            WIP_Polygon::Shaders::debugShader.use();
+            WIP_Polygon::Shaders::debugShader.setMat4("model", debug_meshes_2[i].localToWorld);
+            WIP_Polygon::Shaders::debugShader.setVec4("color", debug_meshes_2[i].color);
+            glLineWidth(debug_meshes_2[i].line_width);
+            glBindVertexArray(debug_meshes_2[i].VAO);
+            glDrawArrays(GL_LINE_STRIP, 0, debug_meshes_2[i].vert_count);
+            glBindVertexArray(0);
+            glLineWidth(1.0f);
+        }
+        debug_meshes_2.clear();
     }
 
 }

@@ -12,33 +12,16 @@
 #include "Collider.h"
 
 namespace WIP_Polygon {
+	class Collider;
 	class QuadCollider : public Collider{
 	public:
-		WIP_Polygon::Quad quad{};
-		QuadCollider() :
-			Collider{ glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f), &quad },
-			quad{WIP_Polygon::Quad()}
-		{
-		}
-		QuadCollider(glm::vec3 _scale) :
-			Collider{ _scale, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f), &quad },
-			quad{ WIP_Polygon::Quad() }
-		{
-		}
-		QuadCollider(glm::vec3 _scale, glm::vec3 _position) :
-			Collider{ _scale, _position, glm::vec3(0.0f, 0.0f, 0.0f), &quad },
-			quad{ WIP_Polygon::Quad() } 
-		{
-		}
-		QuadCollider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation) :
-			Collider{ _scale, _position, _rotation, &quad },
-			quad{ WIP_Polygon::Quad() }
-		{
-		}
-
-		void DrawAxes() override {
-
-		}
+		WIP_Polygon::Quad quad;
+		QuadCollider();
+		QuadCollider(glm::vec3 _scale);
+		QuadCollider(glm::vec3 _scale, glm::vec3 _position);
+		QuadCollider(glm::vec3 _scale, glm::vec3 _position, glm::vec3 _rotation);		
+		void DrawAxes() override;
+		glm::mat3 CalculateInertiaTensor() override;
 	};
 }
 #endif
